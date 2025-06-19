@@ -66,8 +66,8 @@ async function getPdfTextFromDataUri(dataUri: string): Promise<string | null> {
   }
 
   try {
-    const pdfParse = (await import('pdf-parse')).default; // Dynamic import
-    const data = await pdfParse(pdfBuffer);
+    const pdfParse = (await import('pdf-parse')).default;
+    const data = await pdfParse(pdfBuffer); // pdfBuffer viene del base64 del usuario
     if (data && typeof data.text === 'string') {
         return data.text;
     }
@@ -134,7 +134,7 @@ const primaryCareChatFlow = ai.defineFlow(
         body: JSON.stringify({
           model: 'openai/gpt-3.5-turbo', 
           messages: messagesToOpenRouter,
-          max_tokens: 1024, // <-- Agrega este parámetro
+          max_tokens: 256, // <-- reduce aquí
         }),
       });
 
