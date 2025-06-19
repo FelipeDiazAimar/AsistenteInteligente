@@ -67,6 +67,9 @@ async function getPdfTextFromDataUri(dataUri: string): Promise<string | null> {
 
   try {
     const pdfParse = (await import('pdf-parse')).default;
+    if (typeof pdfBuffer === 'string') {
+      throw new Error('pdf-parse: Se intentó procesar una ruta de archivo en vez de un buffer. Esto no está permitido en producción.');
+    }
     const data = await pdfParse(pdfBuffer); // pdfBuffer viene del base64 del usuario
     if (data && typeof data.text === 'string') {
         return data.text;
