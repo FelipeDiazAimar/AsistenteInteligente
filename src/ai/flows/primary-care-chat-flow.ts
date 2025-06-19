@@ -9,7 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit'; 
-// import pdfParse from 'pdf-parse'; // Static import removed
+import pdfParse from 'pdf-parse';
 
 // Define the schema for individual messages in the chat history
 const ChatMessageSchema = z.object({
@@ -66,10 +66,6 @@ async function getPdfTextFromDataUri(dataUri: string): Promise<string | null> {
   }
 
   try {
-    const pdfParse = (await import('pdf-parse')).default;
-    if (typeof pdfBuffer === 'string') {
-      throw new Error('pdf-parse: Se intentó procesar una ruta de archivo en vez de un buffer. Esto no está permitido en producción.');
-    }
     const data = await pdfParse(pdfBuffer); // pdfBuffer viene del base64 del usuario
     if (data && typeof data.text === 'string') {
         return data.text;
@@ -170,5 +166,10 @@ const primaryCareChatFlow = ai.defineFlow(
 // Exported wrapper function to be called from the frontend
 export async function primaryCareChat(input: PrimaryCareChatInput): Promise<PrimaryCareChatOutput> {
   return primaryCareChatFlow(input);
+}
+
+export async function extractTextFromPdfBuffer(pdfBuffer: Buffer): Promise<string> {
+  const data = await pdfParse(pdfBuffer);
+  return data.text;
 }
 
