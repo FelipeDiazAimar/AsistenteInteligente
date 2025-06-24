@@ -131,9 +131,9 @@ const primaryCareChatFlow = ai.defineFlow(
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'openai/gpt-3.5-turbo', 
+          model: 'mistralai/mistral-7b-instruct', // Cambiado a modelo de Mistral
           messages: messagesToOpenRouter,
-          max_tokens: 256, // <-- reduce aquí
+          max_tokens: 256,
         }),
       });
 
