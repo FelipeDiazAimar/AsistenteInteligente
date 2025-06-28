@@ -121,10 +121,14 @@ function LoginForm() {
           
           <div className="mt-6 text-center text-sm text-gray-600">
             <p>Credenciales de prueba:</p>
-            <p className="font-mono text-xs bg-gray-100 p-2 rounded mt-2">
-              Email: admin@university.edu<br />
-              Contraseña: admin123
-            </p>
+            <div className="font-mono text-xs bg-gray-100 p-2 rounded mt-2 space-y-1">
+              <div>
+                <strong>Admin:</strong> admin1@admin1.com | admin1
+              </div>
+              <div>
+                <strong>Profesor:</strong> admin@university.edu | admin123
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -13,6 +13,7 @@ interface Professor {
 
 interface AuthContextType {
   professor: Professor | null;
+  user: Professor | null; // Alias para compatibilidad
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
@@ -84,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ professor, isLoading, login, logout, checkAuth }}>
+    <AuthContext.Provider value={{ professor, user: professor, isLoading, login, logout, checkAuth }}>
       {children}
     </AuthContext.Provider>
   );

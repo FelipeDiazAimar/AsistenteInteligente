@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "hash-passwords": "tsx scripts/hash-passwords.ts",
     "setup-db": "tsx scripts/setup-database.ts",
-    "setup-db-pg": "tsx scripts/setup-database-pg.ts"
+    "setup-db-pg": "tsx scripts/setup-database-pg.ts",
+    "add-admin": "tsx scripts/add-admin.ts"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.12.0",

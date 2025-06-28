@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { FilePlus2, AlertTriangle, LogOut, UploadCloud, FileText, VideoIcon, ImageIcon, Newspaper, ClipboardCheck, SkipForward, BookOpen, Trash2, Pencil, XCircle, Loader2, User } from "lucide-react";
+import { FilePlus2, AlertTriangle, LogOut, UploadCloud, FileText, VideoIcon, ImageIcon, Newspaper, ClipboardCheck, SkipForward, BookOpen, Trash2, Pencil, XCircle, Loader2, User, Settings, Shield } from "lucide-react";
 import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
 import {
   saveResourceAction,
   fetchResourcesAction,
@@ -35,6 +36,7 @@ const resourceTypeOptions: ResourceTypeOption[] = [
 
 export default function AddNotesPage() {
   const { professor, isLoading: authLoading, logout } = useAuth();
+  const router = useRouter();
 
   const [selectedResourceType, setSelectedResourceType] = useState<ResourceType | 'assessment' | ''>('');
   const [formKey, setFormKey] = useState<string | number>(Date.now()); 
@@ -47,6 +49,9 @@ export default function AddNotesPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [currentEditingResource, setCurrentEditingResource] = useState<Resource | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Verificar si el usuario es admin
+  const isAdmin = professor?.email === 'admin1@admin1.com' || professor?.email === 'admin@university.edu';
   
   const resourceFormCardRef = useRef<HTMLDivElement>(null);
 
@@ -198,10 +203,22 @@ export default function AddNotesPage() {
             </div>
           </div>
           
-          <Button variant="outline" onClick={handleLogout}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Cerrar Sesión
-          </Button>
+          <div className="flex items-center gap-3">
+            {isAdmin && (
+              <Button 
+                variant="outline" 
+                onClick={() => router.push('/admin/dashboard')}
+                className="flex items-center gap-2"
+              >
+                <Shield className="h-4 w-4" />
+                Panel Admin
+              </Button>
+            )}
+            <Button variant="outline" onClick={handleLogout}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Cerrar Sesión
+            </Button>
+          </div>
         </div>
 
         {/* Feedback Message */}
@@ -244,7 +261,7 @@ export default function AddNotesPage() {
                 <Select 
                   name="resourceType" 
                   value={selectedResourceType} 
-                  onValueChange={setSelectedResourceType}
+                  onValueChange={(value: string) => setSelectedResourceType(value as ResourceType | 'assessment' | '')}
                   required
                 >
                   <SelectTrigger>

@@ -1,18 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateSession } from '@/lib/auth';
+import { isUserAdmin } from '@/lib/admin-auth';
 
 export async function middleware(request: NextRequest) {
   // Rutas que requieren autenticación
   const protectedPaths = ['/admin'];
+  const adminPaths = ['/admin/dashboard'];
   
   const { pathname } = request.nextUrl;
   
   // Verificar si la ruta requiere autenticación
   const requiresAuth = protectedPaths.some(path => pathname.startsWith(path));
+  const requiresAdmin = adminPaths.some(path => pathname.startsWith(path));
   
   if (requiresAuth) {
-    // Obtener token de las cookies
-    const token = request.cookies.get('auth-token')?.value;
+    // Obtener token de las cookies - verificar ambos nombres
+    const token = request.cookies.get('auth-token')?.value || request.cookies.get('session_token')?.value;
     
     if (!token) {
       // Redirigir a login si no hay token
@@ -29,7 +32,25 @@ export async function middleware(request: NextRequest) {
         // Token inválido o expirado, redirigir a login
         const response = NextResponse.redirect(new URL('/admin/login', request.url));
         response.cookies.delete('auth-token');
+        response.cookies.delete('session_token');
         return response;
+      }
+
+      // Verificar si es ruta de admin y si el usuario es admin
+      if (requiresAdmin) {
+        const userIsAdmin = await isUserAdmin(professor.email);
+        if (!userIsAdmin) {
+          // No es admin, redirigir al panel normal
+          return NextResponse.redirect(new URL('/admin/add-notes', request.url));
+        }
+      }
+
+      // Si el usuario es admin y está accediendo a /admin/add-notes, redirigir al dashboard
+      if (pathname === '/admin/add-notes') {
+        const userIsAdmin = await isUserAdmin(professor.email);
+        if (userIsAdmin) {
+          return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+        }
       }
       
       // Usuario autenticado, continuar
@@ -39,6 +60,7 @@ export async function middleware(request: NextRequest) {
       response.headers.set('x-professor-id', professor.id);
       response.headers.set('x-professor-name', professor.name);
       response.headers.set('x-professor-email', professor.email);
+      response.headers.set('x-professor-is-admin', (await isUserAdmin(professor.email)).toString());
       
       return response;
       
@@ -46,6 +68,7 @@ export async function middleware(request: NextRequest) {
       console.error('Error en middleware:', error);
       const response = NextResponse.redirect(new URL('/admin/login', request.url));
       response.cookies.delete('auth-token');
+      response.cookies.delete('session_token');
       return response;
     }
   }

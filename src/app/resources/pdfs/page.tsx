@@ -32,8 +32,9 @@ function mapAppResourceToPdfItem(resource: AppResource): ResourceItem {
 }
 
 
-export default async function PdfResourcesPage({ searchParams }: { searchParams?: { q?: string } }) {
-  const searchQuery = searchParams?.q || '';
+export default async function PdfResourcesPage({ searchParams }: { searchParams?: Promise<{ q?: string }> }) {
+  const params = await searchParams;
+  const searchQuery = params?.q || '';
   let pdfResources: ResourceItem[] = [];
   let fetchError: string | null = null;
 

@@ -71,6 +71,51 @@ async function setupDatabase() {
 
     console.log('✅ Tabla professor_sessions creada');
 
+    // Crear tabla resources si no existe
+    console.log('Creando tabla resources...');
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS resources (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          title VARCHAR(255) NOT NULL,
+          description TEXT,
+          type VARCHAR(50) NOT NULL,
+          content TEXT,
+          file_path VARCHAR(500),
+          cover_image_path VARCHAR(500),
+          ai_hint TEXT,
+          professor_id UUID,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+    `);
+
+    // Intentar agregar la foreign key si no existe
+    try {
+      await pool.query(`
+        ALTER TABLE resources 
+        ADD CONSTRAINT fk_resources_professor 
+        FOREIGN KEY (professor_id) REFERENCES professors(id) ON DELETE SET NULL
+      `);
+    } catch (error) {
+      // Si ya existe la constraint, continuar
+      console.log('Foreign key constraint ya existe o no se pudo crear');
+    }
+
+    // Crear índices para resources (intentar crearlos individualmente)
+    try {
+      await pool.query(`CREATE INDEX IF NOT EXISTS idx_resources_type ON resources(type);`);
+    } catch (error) {
+      console.log('Índice idx_resources_type ya existe');
+    }
+    
+    try {
+      await pool.query(`CREATE INDEX IF NOT EXISTS idx_resources_professor ON resources(professor_id);`);
+    } catch (error) {
+      console.log('Índice idx_resources_professor ya existe o no se pudo crear');
+    }
+
+    console.log('✅ Tabla resources creada');
+
     // Verificar si ya existen profesores
     const { rows: existingProfessors } = await pool.query('SELECT COUNT(*) as count FROM professors');
     
@@ -85,18 +130,17 @@ async function setupDatabase() {
       
       // Insertar profesores de ejemplo
       await pool.query(`
-        INSERT INTO professors (name, email, password_hash, department) VALUES
-        ('Administrador', 'admin@university.edu', $1, 'Administración'),
-        ('Admin Principal', 'admin1@admin1.com', $2, 'Administración'),
-        ('Dr. García', 'garcia@university.edu', $3, 'Medicina'),
-        ('Dr. Martínez', 'martinez@university.edu', $4, 'Cardiología')
-      `, [adminPassword, admin1Password, drGarciaPassword, drMartinezPassword]);
+        INSERT INTO professors (name, email, password_hash, department) 
+        VALUES ('Admin Principal', 'admin1@admin1.com', $1, 'Administración')
+        ON CONFLICT (email) DO NOTHING
+      `, [admin1Password]);
 
       console.log('✅ Profesores de ejemplo insertados');
       console.log('\n📋 Credenciales de ejemplo:');
       console.log('1. Email: admin@university.edu | Password: admin123');
-      console.log('2. Email: garcia@university.edu | Password: garcia123');
-      console.log('3. Email: martinez@university.edu | Password: martinez123');
+      console.log('2. Email: admin1@admin1.com | Password: admin1 (ADMIN PRINCIPAL)');
+      console.log('3. Email: garcia@university.edu | Password: garcia123');
+      console.log('4. Email: martinez@university.edu | Password: martinez123');
     } else {
       console.log('✅ Profesores ya existen en la base de datos');
     }

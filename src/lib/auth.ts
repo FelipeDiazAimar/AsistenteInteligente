@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { getPostgresClient } from './postgres';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'tu-clave-secreta-muy-segura';
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-change-in-production';
 const JWT_EXPIRES_IN = '7d'; // 7 días
 
 export interface Professor {

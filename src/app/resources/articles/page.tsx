@@ -32,8 +32,9 @@ function mapAppResourceToArticleItem(resource: AppResource): ResourceItem {
   };
 }
 
-export default async function ArticleResourcesPage({ searchParams }: { searchParams?: { q?: string } }) {
-  const searchQuery = searchParams?.q || '';
+export default async function ArticleResourcesPage({ searchParams }: { searchParams?: Promise<{ q?: string }> }) {
+  const params = await searchParams;
+  const searchQuery = params?.q || '';
   let articleResources: ResourceItem[] = [];
   let fetchError: string | null = null;
 

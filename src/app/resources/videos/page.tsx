@@ -32,8 +32,9 @@ function mapAppResourceToVideoItem(resource: AppResource): ResourceItem {
   };
 }
 
-export default async function VideoResourcesPage({ searchParams }: { searchParams?: { q?: string } }) {
-  const searchQuery = searchParams?.q || '';
+export default async function VideoResourcesPage({ searchParams }: { searchParams?: Promise<{ q?: string }> }) {
+  const params = await searchParams;
+  const searchQuery = params?.q || '';
   let videoResources: ResourceItem[] = [];
   let fetchError: string | null = null;
 

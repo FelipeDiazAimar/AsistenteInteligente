@@ -29,8 +29,9 @@ function mapAppResourceToAssessmentItem(resource: AppResource): AssessmentItem {
 }
 
 
-export default async function SelfAssessmentPage({ searchParams }: { searchParams?: { q?: string } }) {
-  const searchQuery = searchParams?.q || '';
+export default async function SelfAssessmentPage({ searchParams }: { searchParams?: Promise<{ q?: string }> }) {
+  const params = await searchParams;
+  const searchQuery = params?.q || '';
   let assessmentItems: AssessmentItem[] = [];
   let fetchError: string | null = null;
 

@@ -9,7 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit'; 
-import pdfParse from 'pdf-parse';
+// import pdfParse from 'pdf-parse'; // Temporalmente comentado para evitar errores
 
 // Define the schema for individual messages in the chat history
 const ChatMessageSchema = z.object({
@@ -66,11 +66,11 @@ async function getPdfTextFromDataUri(dataUri: string): Promise<string | null> {
   }
 
   try {
-    const data = await pdfParse(pdfBuffer); // pdfBuffer viene del base64 del usuario
-    if (data && typeof data.text === 'string') {
-        return data.text;
-    }
-    console.error('pdfParse did not return expected data structure or text. URI prefix:', dataUri.substring(0,100));
+    // const data = await pdfParse(pdfBuffer); // Temporalmente comentado
+    // if (data && typeof data.text === 'string') {
+    //     return data.text;
+    // }
+    console.error('PDF parsing temporarily disabled');
     return null;
   } catch (error) {
     console.error('pdf-parse failed during PDF text extraction. URI prefix:', dataUri.substring(0, 50), 'Error message:', error instanceof Error ? error.message : String(error));
@@ -169,7 +169,8 @@ export async function primaryCareChat(input: PrimaryCareChatInput): Promise<Prim
 }
 
 export async function extractTextFromPdfBuffer(pdfBuffer: Buffer): Promise<string> {
-  const data = await pdfParse(pdfBuffer);
-  return data.text;
+  // const data = await pdfParse(pdfBuffer); // Temporalmente comentado
+  // return data.text;
+  return 'PDF parsing temporarily disabled';
 }
 

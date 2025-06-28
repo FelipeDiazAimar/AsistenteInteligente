@@ -32,8 +32,9 @@ function mapAppResourceToImageItem(resource: AppResource): ResourceItem {
   };
 }
 
-export default async function ImageResourcesPage({ searchParams }: { searchParams?: { q?: string } }) {
-  const searchQuery = searchParams?.q || '';
+export default async function ImageResourcesPage({ searchParams }: { searchParams?: Promise<{ q?: string }> }) {
+  const params = await searchParams;
+  const searchQuery = params?.q || '';
   let imageResources: ResourceItem[] = [];
   let fetchError: string | null = null;
 
