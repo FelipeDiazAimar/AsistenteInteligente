@@ -38,11 +38,12 @@ export default function SessionsManagement() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [cleaningUp, setCleaningUp] = useState(false);
 
   useEffect(() => {
     fetchSessions();
-    // Refrescar cada 30 segundos para mostrar sesiones actualizadas
-    const interval = setInterval(fetchSessions, 30000);
+    // Refrescar cada 5 segundos para mostrar tiempo restante en tiempo real
+    const interval = setInterval(fetchSessions, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -87,6 +88,31 @@ export default function SessionsManagement() {
     }
   };
 
+  const handleCleanExpiredSessions = async () => {
+    if (!confirm('¿Estás seguro de que quieres limpiar todas las sesiones expiradas?')) return;
+
+    setCleaningUp(true);
+    try {
+      const response = await fetch('/api/admin/sessions/cleanup', {
+        method: 'POST',
+        credentials: 'include'
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSuccess(`${data.deletedCount} sesiones expiradas eliminadas`);
+        fetchSessions();
+      } else {
+        setError(data.error || 'Error al limpiar sesiones');
+      }
+    } catch (error) {
+      setError('Error de conexión');
+    } finally {
+      setCleaningUp(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('es-ES', {
       year: 'numeric',
@@ -95,6 +121,25 @@ export default function SessionsManagement() {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const getTimeRemaining = (expiresAt: string) => {
+    const now = new Date();
+    const expiry = new Date(expiresAt);
+    const diffMs = expiry.getTime() - now.getTime();
+    
+    if (diffMs <= 0) {
+      return 'Expirada';
+    }
+    
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffSeconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+    
+    if (diffMinutes > 0) {
+      return `${diffMinutes}m ${diffSeconds}s`;
+    } else {
+      return `${diffSeconds}s`;
+    }
   };
 
   const isSessionExpired = (expiresAt: string) => {
@@ -158,9 +203,24 @@ export default function SessionsManagement() {
               <Activity className="h-5 w-5" />
               <CardTitle>Sesiones Activas</CardTitle>
             </div>
-            <Button onClick={fetchSessions} variant="outline" size="sm">
-              Actualizar
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                onClick={handleCleanExpiredSessions} 
+                variant="outline" 
+                size="sm"
+                disabled={cleaningUp}
+              >
+                {cleaningUp ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Trash2 className="h-4 w-4 mr-2" />
+                )}
+                Limpiar Expiradas
+              </Button>
+              <Button onClick={fetchSessions} variant="outline" size="sm">
+                Actualizar
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -192,6 +252,7 @@ export default function SessionsManagement() {
                     <TableHead>Departamento</TableHead>
                     <TableHead>Inicio de Sesión</TableHead>
                     <TableHead>Expira</TableHead>
+                    <TableHead>Tiempo Restante</TableHead>
                     <TableHead>Estado</TableHead>
                     <TableHead>Acciones</TableHead>
                   </TableRow>
@@ -208,6 +269,17 @@ export default function SessionsManagement() {
                       <TableCell>{session.department}</TableCell>
                       <TableCell>{formatDate(session.created_at)}</TableCell>
                       <TableCell>{formatDate(session.expires_at)}</TableCell>
+                      <TableCell>
+                        <span className={`font-mono text-sm ${
+                          getTimeRemaining(session.expires_at) === 'Expirada' 
+                            ? 'text-red-600' 
+                            : getTimeRemaining(session.expires_at).includes('m') && parseInt(getTimeRemaining(session.expires_at)) < 5
+                              ? 'text-orange-600' 
+                              : 'text-green-600'
+                        }`}>
+                          {getTimeRemaining(session.expires_at)}
+                        </span>
+                      </TableCell>
                       <TableCell>
                         <Badge variant="default" className="bg-green-100 text-green-800">
                           Activa

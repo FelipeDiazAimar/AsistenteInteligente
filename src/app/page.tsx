@@ -174,109 +174,109 @@ export default function HomePage() {
 
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6 sm:gap-8 p-4 sm:p-6 max-w-7xl mx-auto">
       <section className="text-center">
-        <h1 className="text-4xl font-bold tracking-tight font-headline text-primary md:text-5xl lg:text-6xl">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight font-headline text-primary">
           Bienvenido a Tu Compañero de Atención Primaria
         </h1>
-        <p className="mt-4 text-lg text-muted-foreground md:text-xl">
+        <p className="mt-4 text-base sm:text-lg md:text-xl text-muted-foreground px-4">
           Aprende, consulta y mejora tus conocimientos de atención primaria con asistencia de IA.
         </p>
       </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* AI Chat Assistant Column */}
-        <Card className="flex flex-col shadow-lg rounded-xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-headline">
-              <MessageCircle className="text-accent h-6 w-6" />
+        <Card className="flex flex-col shadow-lg rounded-xl h-[500px] sm:h-[600px] lg:h-[700px]">
+          <CardHeader className="flex-shrink-0">
+            <CardTitle className="flex items-center gap-2 font-headline text-lg sm:text-xl">
+              <MessageCircle className="text-accent h-5 w-5 sm:h-6 sm:w-6" />
               Asistente de Chat IA
             </CardTitle>
-            <CardDescription>Haz preguntas y obtén información instantánea sobre temas de atención primaria.</CardDescription>
+            <CardDescription className="text-sm">Haz preguntas y obtén información instantánea sobre temas de atención primaria.</CardDescription>
              {pdfDataUri && selectedFile && (
-              <div className="mt-2 p-2 text-sm bg-green-100 text-green-700 rounded-md flex items-center gap-2">
-                <FileCheck2 className="h-5 w-5" />
-                <span>PDF: "{selectedFile.name}" cargado y se usará como contexto.</span>
+              <div className="mt-2 p-2 text-xs sm:text-sm bg-green-100 text-green-700 rounded-md flex items-center gap-2">
+                <FileCheck2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                <span className="truncate">PDF: "{selectedFile.name}" cargado y se usará como contexto.</span>
               </div>
             )}
           </CardHeader>
           <CardContent className="flex-grow flex flex-col p-0">
-            <ScrollArea className="flex-grow h-[200px] p-6" ref={scrollAreaRef}>
-              <div className="space-y-4">
+            <ScrollArea className="flex-grow min-h-0 p-3 sm:p-4 lg:p-6" ref={scrollAreaRef}>
+              <div className="space-y-3 sm:space-y-4">
                 {messages.map((msg) => (
-                  <div key={msg.id} className={cn("flex items-start gap-3", msg.role === 'user' && "justify-end")}>
+                  <div key={msg.id} className={cn("flex items-start gap-2 sm:gap-3", msg.role === 'user' && "justify-end")}>
                     {msg.role === 'assistant' && (
-                      <div className="p-2 bg-primary/20 rounded-full">
-                        <Bot className="h-5 w-5 text-primary" />
+                      <div className="p-1.5 sm:p-2 bg-primary/20 rounded-full flex-shrink-0">
+                        <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                       </div>
                     )}
                     <div className={cn(
-                      "p-3 rounded-lg shadow-sm max-w-[85%]",
+                      "p-2 sm:p-3 rounded-lg shadow-sm max-w-[85%] break-words",
                       msg.role === 'user' ? "bg-accent/80 text-accent-foreground" : "bg-muted text-foreground"
                     )}>
-                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                      <p className="text-xs sm:text-sm whitespace-pre-wrap">{msg.content}</p>
                     </div>
                     {msg.role === 'user' && (
-                      <div className="p-2 bg-muted rounded-full">
-                        <User className="h-5 w-5 text-foreground" />
+                      <div className="p-1.5 sm:p-2 bg-muted rounded-full flex-shrink-0">
+                        <User className="h-4 w-4 sm:h-5 sm:w-5 text-foreground" />
                       </div>
                     )}
                   </div>
                 ))}
                 {isLoadingChat && (
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-primary/20 rounded-full">
-                      <Bot className="h-5 w-5 text-primary" />
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    <div className="p-1.5 sm:p-2 bg-primary/20 rounded-full flex-shrink-0">
+                      <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
-                    <div className="bg-muted p-3 rounded-lg shadow-sm max-w-[75%]">
-                      <p className="text-sm animate-pulse">Escribiendo...</p>
+                    <div className="bg-muted p-2 sm:p-3 rounded-lg shadow-sm max-w-[75%]">
+                      <p className="text-xs sm:text-sm animate-pulse">Escribiendo...</p>
                     </div>
                   </div>
                 )}
               </div>
             </ScrollArea>
           </CardContent>
-          <CardFooter className="border-t p-4">
+          <CardFooter className="border-t p-3 sm:p-4 flex-shrink-0">
             <form onSubmit={handleSendMessage} className="flex w-full items-center gap-2">
               <Input 
                 type="text" 
                 placeholder="Escribe tu pregunta..." 
-                className="flex-grow"
+                className="flex-grow text-sm"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 disabled={isLoadingChat} 
               />
-              <Button type="submit" variant="default" size="icon" aria-label="Enviar pregunta" disabled={isLoadingChat || !chatInput.trim()}>
-                <Send className="h-5 w-5" />
+              <Button type="submit" variant="default" size="icon" aria-label="Enviar pregunta" disabled={isLoadingChat || !chatInput.trim()} className="h-9 w-9 sm:h-10 sm:w-10">
+                <Send className="h-4 w-4" />
               </Button>
             </form>
           </CardFooter>
         </Card>
 
         {/* Resource Viewer and Actions Column */}
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4 sm:gap-6">
           <Card className="shadow-lg rounded-xl">
             {!pdfVisualUrl && (
               <CardHeader>
-                <CardTitle className="font-headline">Visor de Recursos</CardTitle>
-                <CardDescription>Visualiza aquí los materiales educativos cargados.</CardDescription>
+                <CardTitle className="font-headline text-lg sm:text-xl">Visor de Recursos</CardTitle>
+                <CardDescription className="text-sm">Visualiza aquí los materiales educativos cargados.</CardDescription>
               </CardHeader>
             )}
             <CardContent className={cn(
               "rounded-b-xl overflow-hidden",
-              pdfVisualUrl && selectedFile ? "p-0" : "p-6 bg-muted/50"
+              pdfVisualUrl && selectedFile ? "p-0" : "p-4 sm:p-6 bg-muted/50"
             )}>
               {pdfVisualUrl && selectedFile ? (
                 <iframe
                   src={pdfVisualUrl}
-                  className="w-full h-[135vh] border-0"
+                  className="w-full h-[300px] sm:h-[400px] lg:h-[500px] border-0"
                   title={selectedFile.name}
                   aria-label={`Visor de PDF: ${selectedFile.name}`}
                 />
               ) : (
-                <div className="relative flex flex-col items-center justify-center h-[200px] text-center">
-                  <FileSearch className="h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">
+                <div className="relative flex flex-col items-center justify-center h-[150px] sm:h-[200px] text-center">
+                  <FileSearch className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 text-muted-foreground mb-3 sm:mb-4" />
+                  <p className="text-muted-foreground text-sm sm:text-base px-4">
                     Carga un apunte para verlo aquí o para usarlo como contexto en el chat.
                   </p>
                 </div>
@@ -287,12 +287,12 @@ export default function HomePage() {
           <Card className="shadow-lg rounded-xl">
             {!pdfVisualUrl && (
               <CardHeader>
-                <CardTitle className="font-headline">Carga</CardTitle>
+                <CardTitle className="font-headline text-lg sm:text-xl">Carga</CardTitle>
               </CardHeader>
             )}
             <CardContent className={cn(
               "flex flex-col",
-              pdfVisualUrl ? "p-4" : "gap-4 p-6 pt-0" 
+              pdfVisualUrl ? "p-3 sm:p-4" : "gap-3 sm:gap-4 p-4 sm:p-6 pt-0" 
             )}>
               <input
                 type="file"
@@ -302,25 +302,27 @@ export default function HomePage() {
                 className="hidden"
                 aria-hidden="true"
               />
-              <Button variant="outline" size="lg" className="w-full" onClick={handleUploadClick}>
-                <Upload className="mr-2 h-5 w-5" />
-                {(pdfVisualUrl || pdfDataUri) ? "Cargar Otro PDF (quita el actual)" : "Subir Archivo PDF"}
+              <Button variant="outline" size="lg" className="w-full text-sm sm:text-base" onClick={handleUploadClick}>
+                <Upload className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="truncate">
+                  {(pdfVisualUrl || pdfDataUri) ? "Cargar Otro PDF" : "Subir Archivo PDF"}
+                </span>
               </Button>
 
               {!(pdfVisualUrl || pdfDataUri) && !selectedFile && (
-                <p className="text-xs text-muted-foreground text-center">
+                <p className="text-xs text-muted-foreground text-center px-2">
                   Sube archivos PDF para previsualización y/o para dar contexto al chat IA.
                 </p>
               )}
-              {selectedFile && !pdfVisualUrl && !pdfDataUri && ( // Should not happen if logic is correct
-                <p className="text-xs text-destructive text-center">
+              {selectedFile && !pdfVisualUrl && !pdfDataUri && (
+                <p className="text-xs text-destructive text-center px-2">
                   El archivo seleccionado no es un PDF válido o no se pudo cargar.
                 </p>
               )}
               {(pdfVisualUrl || pdfDataUri) && selectedFile && (
-                <Button variant="destructive" size="sm" className="w-full mt-2" onClick={clearPdfContext}>
+                <Button variant="destructive" size="sm" className="w-full mt-2 text-sm" onClick={clearPdfContext}>
                   <XCircle className="mr-2 h-4 w-4" />
-                  Quitar PDF del visor y contexto del chat
+                  <span className="truncate">Quitar PDF</span>
                 </Button>
               )}
             </CardContent>

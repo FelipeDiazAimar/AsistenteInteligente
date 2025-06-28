@@ -106,9 +106,9 @@ export async function authenticateProfessor(email: string, password: string): Pr
 // Guardar sesión usando Supabase
 export async function saveSession(professorId: string, token: string): Promise<void> {
   try {
-    // Calcular fecha de expiración (7 días desde ahora)
+    // Calcular fecha de expiración (20 minutos desde ahora)
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
+    expiresAt.setMinutes(expiresAt.getMinutes() + 20);
 
     const { error } = await supabase
       .from('professor_sessions')

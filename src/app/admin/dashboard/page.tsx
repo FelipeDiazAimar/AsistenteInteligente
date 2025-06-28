@@ -19,6 +19,7 @@ import {
   Database
 } from "lucide-react";
 import { useAuth } from '@/hooks/use-auth';
+import { useSessionExpiration } from '@/hooks/use-session-expiration';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Importar componentes para cada sección
@@ -29,6 +30,9 @@ export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // Hook para manejar expiración automática de sesiones
+  useSessionExpiration();
 
   // Verificar si el usuario es admin
   useEffect(() => {

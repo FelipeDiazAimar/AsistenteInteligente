@@ -11,7 +11,8 @@
     "hash-passwords": "tsx scripts/hash-passwords.ts",
     "setup-db": "tsx scripts/setup-database.ts",
     "setup-db-pg": "tsx scripts/setup-database-pg.ts",
-    "add-admin": "tsx scripts/add-admin.ts"
+    "add-admin": "tsx scripts/add-admin.ts",
+    "clean-sessions": "tsx scripts/clean-expired-sessions.ts"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.12.0",

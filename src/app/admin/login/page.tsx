@@ -20,6 +20,8 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectPath = searchParams.get('redirect') || '/admin/add-notes';
+  const sessionExpired = searchParams.get('expired') === 'true';
+  const networkError = searchParams.get('error') === 'network';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,6 +75,22 @@ function LoginForm() {
         </CardHeader>
         
         <CardContent>
+          {sessionExpired && (
+            <Alert className="mb-4 border-orange-200 bg-orange-50 text-orange-800">
+              <AlertDescription>
+                Tu sesión ha expirado (20 minutos de inactividad). Por favor, inicia sesión nuevamente.
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {networkError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>
+                Error de conexión. Por favor, verifica tu conexión a internet e intenta nuevamente.
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <Alert variant="destructive">

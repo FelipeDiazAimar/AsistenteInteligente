@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { FilePlus2, AlertTriangle, LogOut, UploadCloud, FileText, VideoIcon, ImageIcon, Newspaper, ClipboardCheck, SkipForward, BookOpen, Trash2, Pencil, XCircle, Loader2, User, Settings, Shield } from "lucide-react";
 import { useAuth } from '@/hooks/use-auth';
+import { useSessionExpiration } from '@/hooks/use-session-expiration';
 import { useRouter } from 'next/navigation';
 import {
   saveResourceAction,
@@ -37,6 +38,9 @@ const resourceTypeOptions: ResourceTypeOption[] = [
 export default function AddNotesPage() {
   const { professor, isLoading: authLoading, logout } = useAuth();
   const router = useRouter();
+
+  // Hook para manejar expiración automática de sesiones
+  useSessionExpiration();
 
   const [selectedResourceType, setSelectedResourceType] = useState<ResourceType | 'assessment' | ''>('');
   const [formKey, setFormKey] = useState<string | number>(Date.now()); 

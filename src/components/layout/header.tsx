@@ -1,9 +1,9 @@
 "use client";
 
 import Link from 'next/link';
-import { Menu, ArrowLeft } from 'lucide-react';
+import { Menu, ArrowLeft, Home, BookOpen, FileText, Video, Image as ImageIcon, ClipboardCheck, FilePlus2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from '@/components/ui/sheet';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import React from 'react';
@@ -19,12 +19,15 @@ function HeaderComponent() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between px-4 sm:px-2 lg:px-4">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="text-xl font-bold tracking-tight font-headline">Compañero de Atención Primaria</span>
+      <div className="container flex h-16 items-center justify-between px-2 sm:px-4 lg:px-6">
+        <Link href="/" className="flex items-center gap-2 min-w-0 flex-1 mr-4">
+          <span className="text-sm sm:text-lg md:text-xl font-bold tracking-tight font-headline truncate">
+            <span className="hidden sm:inline">Compañero de </span>
+            <span>Atención Primaria</span>
+          </span>
         </Link>
         
-        <div className="flex items-center gap-8 mr-2">
+        <div className="flex items-center gap-2 sm:gap-4 md:gap-8 flex-shrink-0">
           <div className="ml-1">
             <ThemeToggleButton />
           </div>
@@ -32,24 +35,52 @@ function HeaderComponent() {
             variant="outline" 
             size="icon" 
             onClick={handleGoBack}
-            className="h-8 w-8 rounded-full hover:bg-blue-100 hover:border-blue-300 hover:text-blue-700 transition-colors duration-200"
+            className="h-8 w-8 sm:h-9 sm:w-9 rounded-full hover:bg-blue-100 hover:border-blue-300 hover:text-blue-700 transition-colors duration-200"
             title="Volver atrás"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="sr-only">Volver atrás</span>
           </Button>
           {isMobile ? (
-             <Sheet>
+            <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="md:hidden">
-                  <Menu className="h-5 w-5" />
+                <Button variant="outline" size="icon" className="md:hidden h-8 w-8 sm:h-9 sm:w-9">
+                  <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
                   <span className="sr-only">Alternar Menú</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="md:hidden" {...({} as any)}>
-                <nav className="grid gap-6 text-lg font-medium mt-8">
-                  <Link href="/" className="flex items-center gap-2 mb-4">
-                    <span className="font-bold font-headline">Compañero de Atención Primaria</span>
+              <SheetContent side="left" className="md:hidden w-[280px] sm:w-[300px]">
+                <SheetHeader>
+                  <SheetTitle>Menú de Navegación</SheetTitle>
+                </SheetHeader>
+                <nav className="flex flex-col gap-4 mt-6">
+                  <Link href="/" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
+                    <Home className="h-5 w-5" />
+                    <span className="font-medium">Inicio</span>
+                  </Link>
+                  <Link href="/resources/pdfs" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
+                    <FileText className="h-5 w-5" />
+                    <span className="font-medium">PDFs</span>
+                  </Link>
+                  <Link href="/resources/videos" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
+                    <Video className="h-5 w-5" />
+                    <span className="font-medium">Videos</span>
+                  </Link>
+                  <Link href="/resources/images" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
+                    <ImageIcon className="h-5 w-5" />
+                    <span className="font-medium">Imágenes</span>
+                  </Link>
+                  <Link href="/resources/articles" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
+                    <BookOpen className="h-5 w-5" />
+                    <span className="font-medium">Artículos</span>
+                  </Link>
+                  <Link href="/self-assessment" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
+                    <ClipboardCheck className="h-5 w-5" />
+                    <span className="font-medium">Autoevaluación</span>
+                  </Link>
+                  <Link href="/admin/add-notes" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
+                    <FilePlus2 className="h-5 w-5" />
+                    <span className="font-medium">Agregar Apuntes</span>
                   </Link>
                 </nav>
               </SheetContent>
