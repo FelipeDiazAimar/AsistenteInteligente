@@ -59,17 +59,17 @@ const getTypeIcon = (type: string) => {
 const getTypeBadgeColor = (type: string) => {
   switch (type) {
     case 'pdf':
-      return 'bg-red-100 text-red-800';
+      return 'bg-red-100 dark:bg-red-950/30 text-red-800 dark:text-red-200';
     case 'video':
-      return 'bg-purple-100 text-purple-800';
+      return 'bg-purple-100 dark:bg-purple-950/30 text-purple-800 dark:text-purple-200';
     case 'image':
-      return 'bg-green-100 text-green-800';
+      return 'bg-green-100 dark:bg-green-950/30 text-green-800 dark:text-green-200';
     case 'article':
-      return 'bg-blue-100 text-blue-800';
+      return 'bg-blue-100 dark:bg-blue-950/30 text-blue-800 dark:text-blue-200';
     case 'assessment':
-      return 'bg-yellow-100 text-yellow-800';
+      return 'bg-yellow-100 dark:bg-yellow-950/30 text-yellow-800 dark:text-yellow-200';
     default:
-      return 'bg-gray-100 text-gray-800';
+      return 'bg-muted text-muted-foreground';
   }
 };
 
@@ -160,9 +160,9 @@ export default function ResourcesManagement() {
           
           {resources.length === 0 ? (
             <div className="text-center py-8">
-              <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No hay recursos</h3>
-              <p className="text-gray-600">
+              <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No hay recursos</h3>
+              <p className="text-muted-foreground">
                 Los profesores aún no han subido recursos al sistema.
               </p>
             </div>
@@ -199,7 +199,7 @@ export default function ResourcesManagement() {
                       <TableCell>
                         <div>
                           <div className="font-medium">{resource.file_name || resource.title}</div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-muted-foreground">
                             {resource.ai_hint || 'Sin pista de IA'}
                           </div>
                         </div>

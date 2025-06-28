@@ -51,10 +51,10 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando panel de administración...</p>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Cargando panel de administración...</p>
         </div>
       </div>
     );
@@ -62,7 +62,7 @@ export default function AdminDashboard() {
 
   if (!user || !isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Alert className="max-w-md">
           <Shield className="h-4 w-4" />
           <AlertDescription>
@@ -74,16 +74,16 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white shadow">
+      <div className="bg-card shadow border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
-              <Shield className="h-8 w-8 text-blue-600 mr-3" />
+              <Shield className="h-8 w-8 text-primary mr-3" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Panel de Administración</h1>
-                <p className="text-sm text-gray-600">Bienvenido, {user.name}</p>
+                <h1 className="text-2xl font-bold text-foreground">Panel de Administración</h1>
+                <p className="text-sm text-muted-foreground">Bienvenido, {user.name}</p>
               </div>
             </div>
             <Button 

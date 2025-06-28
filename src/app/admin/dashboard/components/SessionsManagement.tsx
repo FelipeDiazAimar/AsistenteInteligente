@@ -132,10 +132,10 @@ export default function SessionsManagement() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-gray-600" />
+              <Clock className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">Sesiones Expiradas</span>
             </div>
-            <div className="text-2xl font-bold text-gray-600">{expiredSessions.length}</div>
+            <div className="text-2xl font-bold text-muted-foreground">{expiredSessions.length}</div>
           </CardContent>
         </Card>
         
@@ -177,9 +177,9 @@ export default function SessionsManagement() {
           
           {activeSessions.length === 0 ? (
             <div className="text-center py-8">
-              <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No hay sesiones activas</h3>
-              <p className="text-gray-600">
+              <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No hay sesiones activas</h3>
+              <p className="text-muted-foreground">
                 Ningún profesor está conectado en este momento.
               </p>
             </div>
@@ -202,7 +202,7 @@ export default function SessionsManagement() {
                       <TableCell>
                         <div>
                           <div className="font-medium">{session.professor_name}</div>
-                          <div className="text-sm text-gray-500">{session.professor_email}</div>
+                          <div className="text-sm text-muted-foreground">{session.professor_email}</div>
                         </div>
                       </TableCell>
                       <TableCell>{session.department}</TableCell>
@@ -258,7 +258,7 @@ export default function SessionsManagement() {
                       <TableCell>
                         <div>
                           <div className="font-medium">{session.professor_name}</div>
-                          <div className="text-sm text-gray-500">{session.professor_email}</div>
+                          <div className="text-sm text-muted-foreground">{session.professor_email}</div>
                         </div>
                       </TableCell>
                       <TableCell>{session.department}</TableCell>

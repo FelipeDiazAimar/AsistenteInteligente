@@ -159,10 +159,10 @@ export default function AddNotesPage() {
   // Loading state
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p>Verificando autenticación...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground">Verificando autenticación...</p>
         </div>
       </div>
     );
@@ -171,11 +171,11 @@ export default function AddNotesPage() {
   // Not authenticated - this shouldn't happen due to middleware, but just in case
   if (!professor) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Acceso Denegado</h1>
-          <p className="text-gray-600 mb-4">Necesitas estar autenticado para acceder a esta página.</p>
+          <h1 className="text-2xl font-bold mb-2 text-foreground">Acceso Denegado</h1>
+          <p className="text-muted-foreground mb-4">Necesitas estar autenticado para acceder a esta página.</p>
           <Button onClick={() => window.location.href = '/admin/login'}>
             Ir al Login
           </Button>
@@ -185,7 +185,7 @@ export default function AddNotesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         
         {/* Header with professor info and logout */}
@@ -195,10 +195,10 @@ export default function AddNotesPage() {
               <User className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Panel de Administración</h1>
-              <p className="text-gray-600">Bienvenido, {professor.name}</p>
+              <h1 className="text-2xl font-bold text-foreground">Panel de Administración</h1>
+              <p className="text-muted-foreground">Bienvenido, {professor.name}</p>
               {professor.department && (
-                <p className="text-sm text-gray-500">{professor.department}</p>
+                <p className="text-sm text-muted-foreground">{professor.department}</p>
               )}
             </div>
           </div>
@@ -225,8 +225,8 @@ export default function AddNotesPage() {
         {feedbackMessage && (
           <div className={`mb-6 p-4 rounded-lg border ${
             feedbackMessage.type === 'success' 
-              ? 'bg-green-50 border-green-200 text-green-800' 
-              : 'bg-red-50 border-red-200 text-red-800'
+              ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200' 
+              : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200'
           }`}>
             <div className="flex items-center gap-2">
               {feedbackMessage.type === 'success' ? (
@@ -362,7 +362,7 @@ export default function AddNotesPage() {
                     required={!isEditing}
                   />
                   {isEditing && currentEditingResource?.fileName && (
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       Archivo actual: {currentEditingResource.fileName}
                     </p>
                   )}
@@ -380,7 +380,7 @@ export default function AddNotesPage() {
                     accept="image/*"
                   />
                   {isEditing && currentEditingResource?.coverImageName && (
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       Portada actual: {currentEditingResource.coverImageName}
                     </p>
                   )}
@@ -457,13 +457,13 @@ export default function AddNotesPage() {
           <CardContent>
             {isLoadingResources ? (
               <div className="text-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-                <p className="text-gray-600">Cargando recursos...</p>
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+                <p className="text-muted-foreground">Cargando recursos...</p>
               </div>
             ) : filteredResources.length === 0 ? (
               <div className="text-center py-8">
-                <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">
+                <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">
                   {resourceFilterType === 'all' 
                     ? 'No hay recursos agregados aún.' 
                     : `No hay recursos del tipo ${resourceTypeOptions.find(o => o.value === resourceFilterType)?.label}.`
@@ -478,7 +478,7 @@ export default function AddNotesPage() {
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-2">
                           {resourceTypeOptions.find(opt => opt.value === resource.type)?.icon}
-                          <span className="text-sm font-medium text-gray-600 capitalize">
+                          <span className="text-sm font-medium text-muted-foreground capitalize">
                             {resource.type}
                           </span>
                         </div>
@@ -500,8 +500,8 @@ export default function AddNotesPage() {
                         </div>
                       </div>
                       
-                      <h4 className="font-semibold mb-2 line-clamp-2">{resource.title}</h4>
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-3">{resource.description}</p>
+                      <h4 className="font-semibold mb-2 line-clamp-2 text-foreground">{resource.title}</h4>
+                      <p className="text-sm text-muted-foreground mb-3 line-clamp-3">{resource.description}</p>
                       
                       {resource.coverImageUrl && (
                         <div className="mb-3">
@@ -513,7 +513,7 @@ export default function AddNotesPage() {
                         </div>
                       )}
                       
-                      <div className="flex items-center justify-between text-xs text-gray-500">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>
                           {new Date(resource.createdAt).toLocaleDateString('es-ES')}
                         </span>
@@ -522,7 +522,7 @@ export default function AddNotesPage() {
                             href={resource.link} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-800"
+                            className="text-primary hover:text-primary/80 transition-colors"
                           >
                             Ver enlace
                           </a>

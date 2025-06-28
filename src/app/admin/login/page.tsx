@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, LogIn, GraduationCap } from "lucide-react";
+import { ThemeToggleButton } from "@/components/theme-toggle-button";
 
 // Componente que usa useSearchParams debe estar separado
 function LoginForm() {
@@ -52,16 +53,21 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative">
+      {/* Theme toggle button in top right corner */}
+      <div className="absolute top-4 right-4">
+        <ThemeToggleButton />
+      </div>
+      
+      <Card className="w-full max-w-md shadow-lg border-border">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
             <GraduationCap className="h-6 w-6 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-bold text-gray-900">
+          <CardTitle className="text-2xl font-bold text-foreground">
             Panel de Administración
           </CardTitle>
-          <CardDescription className="text-gray-600">
+          <CardDescription className="text-muted-foreground">
             Ingresa tus credenciales para acceder
           </CardDescription>
         </CardHeader>
@@ -119,9 +125,9 @@ function LoginForm() {
             </Button>
           </form>
           
-          <div className="mt-6 text-center text-sm text-gray-600">
+          <div className="mt-6 text-center text-sm text-muted-foreground">
             <p>Credenciales de prueba:</p>
-            <div className="font-mono text-xs bg-gray-100 p-2 rounded mt-2 space-y-1">
+            <div className="font-mono text-xs bg-muted p-2 rounded mt-2 space-y-1 text-muted-foreground">
               <div>
                 <strong>Admin:</strong> admin1@admin1.com | admin1
               </div>
@@ -140,13 +146,18 @@ function LoginForm() {
 export default function AdminLoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen flex items-center justify-center bg-background p-4 relative">
+        {/* Theme toggle button in top right corner */}
+        <div className="absolute top-4 right-4">
+          <ThemeToggleButton />
+        </div>
+        
+        <Card className="w-full max-w-md shadow-lg border-border">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
               <GraduationCap className="h-6 w-6 text-primary" />
             </div>
-            <CardTitle className="text-2xl font-bold text-gray-900">
+            <CardTitle className="text-2xl font-bold text-foreground">
               Cargando...
             </CardTitle>
           </CardHeader>
