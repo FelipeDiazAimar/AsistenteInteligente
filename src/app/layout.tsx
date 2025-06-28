@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { MainLayout } from '@/components/layout/main-layout';
 import { ThemeProvider } from '@/components/theme-provider';
+import { AuthProvider } from '@/hooks/use-auth';
 import { Inter } from 'next/font/google';
 
 const inter = Inter({
@@ -29,10 +30,12 @@ export default function RootLayout({
       </head>
       <body className="font-body"> {/* font-body will now use var(--font-inter) */}
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <MainLayout>
-            {children}
-          </MainLayout>
-          <Toaster />
+          <AuthProvider>
+            <MainLayout>
+              {children}
+            </MainLayout>
+            <Toaster />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

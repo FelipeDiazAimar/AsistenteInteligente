@@ -3,6 +3,7 @@
 import type { File } from 'buffer';
 import { getPostgresClient } from '@/lib/postgres';
 import { supabase } from '@/lib/supabase';
+import { authenticateProfessor, type Professor } from '@/lib/auth';
 
 export type ResourceType = 'pdf' | 'video' | 'image' | 'article' | 'assessment' | '';
 
@@ -26,22 +27,28 @@ export type ClientResource = Omit<Resource, 'createdAt'> & {
   createdAt: string;
 };
 
-export async function handleLoginAction(formData: FormData) {
-  const name = formData.get('name') as string;
+// Nuevo tipo para el resultado de login
+export interface LoginResult {
+  success: boolean;
+  error?: string;
+  professor?: Professor;
+  token?: string;
+}
+
+export async function handleLoginAction(formData: FormData): Promise<LoginResult> {
+  const email = formData.get('email') as string;
   const password = formData.get('password') as string;
-  const confirmPassword = formData.get('confirmPassword') as string;
 
-  if (!name || !password || !confirmPassword) {
-    return { success: false, error: 'Todos los campos son obligatorios.', loggedInName: null };
-  }
-  if (password !== confirmPassword) {
-    return { success: false, error: 'Las contraseñas no coinciden.', loggedInName: null };
+  if (!email || !password) {
+    return { success: false, error: 'Email y contraseña son obligatorios.' };
   }
 
-  if (password === 'profesor123') {
-    return { success: true, error: null, loggedInName: name || "Profesor Test" };
-  } else {
-    return { success: false, error: 'Nombre de usuario o contraseña incorrectos.', loggedInName: null };
+  try {
+    const result = await authenticateProfessor(email, password);
+    return result;
+  } catch (error) {
+    console.error('Error en login action:', error);
+    return { success: false, error: 'Error interno del servidor.' };
   }
 }
 

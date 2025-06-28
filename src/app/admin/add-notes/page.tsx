@@ -8,9 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { FilePlus2, AlertTriangle, LogIn, UploadCloud, FileText, VideoIcon, ImageIcon, Newspaper, ClipboardCheck, SkipForward, BookOpen, Trash2, Pencil, XCircle, Loader2 } from "lucide-react";
+import { FilePlus2, AlertTriangle, LogOut, UploadCloud, FileText, VideoIcon, ImageIcon, Newspaper, ClipboardCheck, SkipForward, BookOpen, Trash2, Pencil, XCircle, Loader2, User } from "lucide-react";
+import { useAuth } from '@/hooks/use-auth';
 import {
-  handleLoginAction,
   saveResourceAction,
   fetchResourcesAction,
   deleteResourceAction,
@@ -34,12 +34,7 @@ const resourceTypeOptions: ResourceTypeOption[] = [
 ];
 
 export default function AddNotesPage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [name, setName] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loginError, setLoginError] = useState('');
-  const [loggedInProfessorName, setLoggedInProfessorName] = useState('');
+  const { professor, isLoading: authLoading, logout } = useAuth();
 
   const [selectedResourceType, setSelectedResourceType] = useState<ResourceType | 'assessment' | ''>('');
   const [formKey, setFormKey] = useState<string | number>(Date.now()); 
@@ -76,323 +71,191 @@ export default function AddNotesPage() {
   };
 
   useEffect(() => {
-    if (isLoggedIn) {
+    if (professor) {
       fetchAndSetResources(resourceFilterType);
     }
-  }, [isLoggedIn, resourceFilterType]);
+  }, [professor, resourceFilterType]);
 
-  const handleLoginSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleLogout = async () => {
+    await logout();
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setLoginError('');
-    setFeedbackMessage(null);
-    const formData = new FormData(event.currentTarget);
-    const result = await handleLoginAction(formData);
-    if (result.success) {
-      setIsLoggedIn(true);
-      setLoggedInProfessorName(result.loggedInName!);
-      setName('');
-      setPassword('');
-      setConfirmPassword('');
-    } else {
-      setLoginError(result.error!);
-    }
-  };
-
-  const handleSkipLogin = () => {
-    setIsLoggedIn(true);
-    setLoggedInProfessorName("Profesor Test");
-    setLoginError('');
-    setName('');
-    setPassword('');
-    setConfirmPassword('');
-  };
-
-  const resetFormAndEditingState = () => {
-    setIsEditing(false);
-    setCurrentEditingResource(null);
-    setSelectedResourceType('');
-    setFormKey(Date.now()); 
-    const form = document.getElementById('resourceForm') as HTMLFormElement;
-    if (form) form.reset();
-  };
-
-  const handleResourceFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setFeedbackMessage(null);
     setIsSubmitting(true);
+    setFeedbackMessage(null);
 
-    const currentFormData = new FormData(event.currentTarget);
-    const resourceTypeFromState = selectedResourceType;
+    const formData = new FormData(event.currentTarget);
 
-    if (!resourceTypeFromState) {
-        setFeedbackMessage({type: 'error', text: "Por favor, seleccione un tipo de recurso."});
-        setIsSubmitting(false);
-        return;
-    }
-    currentFormData.set('resourceType', resourceTypeFromState); 
-
-    let result;
     try {
+      let result;
       if (isEditing && currentEditingResource) {
-        result = await updateResourceAction(currentEditingResource.id, currentFormData);
+        result = await updateResourceAction(currentEditingResource.id, formData);
       } else {
-        result = await saveResourceAction(currentFormData);
+        result = await saveResourceAction(formData);
       }
 
       if (result.success) {
-        setFeedbackMessage({type: 'success', text: result.message || (isEditing ? "Recurso actualizado." : "Recurso guardado.")});
-        resetFormAndEditingState();
-        fetchAndSetResources(resourceFilterType); 
+        setFeedbackMessage({type: 'success', text: isEditing ? "Recurso actualizado." : "Recurso guardado."});
+        
+        if (isEditing) {
+          setIsEditing(false);
+          setCurrentEditingResource(null);
+        }
+        
+        event.currentTarget.reset();
+        setSelectedResourceType('');
+        setFormKey(Date.now());
+        
+        await fetchAndSetResources(resourceFilterType);
       } else {
-        setFeedbackMessage({type: 'error', text: result.error || (isEditing ? "Error al actualizar." : "Error al guardar.")});
+        setFeedbackMessage({type: 'error', text: result.error || "Error procesando recurso."});
       }
     } catch (error) {
-      console.error("Error submitting resource form:", error);
-      setFeedbackMessage({ type: 'error', text: "Ocurrió un error inesperado al enviar el formulario."});
+      console.error('Error:', error);
+      setFeedbackMessage({type: 'error', text: "Error inesperado."});
     } finally {
       setIsSubmitting(false);
     }
   };
-  
-  const handleEditClick = (resource: Resource) => {
-    setIsEditing(true);
-    setCurrentEditingResource(resource);
-    setSelectedResourceType(resource.type);
-    setFormKey(resource.id); 
-    setFeedbackMessage(null); 
-     if (resourceFormCardRef.current) {
-      resourceFormCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  const handleDeleteResource = async (resourceId: string) => {
+    const confirmed = window.confirm("¿Estás seguro de que quieres eliminar este recurso?");
+    if (!confirmed) return;
+
+    const result = await deleteResourceAction(resourceId);
+    if (result.success) {
+      setFeedbackMessage({type: 'success', text: "Recurso eliminado."});
+      await fetchAndSetResources(resourceFilterType);
+    } else {
+      setFeedbackMessage({type: 'error', text: result.error || "Error eliminando recurso."});
     }
   };
 
-  const handleCancelEdit = () => {
-    resetFormAndEditingState();
+  const handleEditResource = (resource: Resource) => {
+    setCurrentEditingResource(resource);
+    setIsEditing(true);
+    setSelectedResourceType(resource.type);
     setFeedbackMessage(null);
   };
 
-  const handleDeleteResource = async (resource: Resource) => {
-    if (!resource.id) return;
-    if (confirm(`¿Está seguro de que desea eliminar el recurso "${resource.title}"?`)) {
-      setFeedbackMessage(null);
-      const result = await deleteResourceAction(resource.id); 
-      if (result.success) {
-        setFeedbackMessage({type: 'success', text: result.message || "Recurso eliminado."});
-        if (currentEditingResource?.id === resource.id) { 
-          resetFormAndEditingState();
-        }
-        fetchAndSetResources(resourceFilterType);
-      } else {
-        setFeedbackMessage({type: 'error', text: result.error || "Error al eliminar."});
-      }
-    }
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setCurrentEditingResource(null);
+    setSelectedResourceType('');
+    setFormKey(Date.now());
+    setFeedbackMessage(null);
   };
 
+  const filteredResources = resourceFilterType === 'all' 
+    ? resourcesList 
+    : resourcesList.filter(r => r.type === resourceFilterType);
+
+  // Loading state
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Verificando autenticación...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Not authenticated - this shouldn't happen due to middleware, but just in case
+  if (!professor) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-2">Acceso Denegado</h1>
+          <p className="text-gray-600 mb-4">Necesitas estar autenticado para acceder a esta página.</p>
+          <Button onClick={() => window.location.href = '/admin/login'}>
+            Ir al Login
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="container mx-auto py-8">
-      <header className="text-center mb-12">
-        <h1 className="text-4xl font-bold tracking-tight font-headline text-primary md:text-5xl">
-          <FilePlus2 className="inline-block h-10 w-10 mr-2 align-bottom" />
-          Gestión de Apuntes (Profesores)
-        </h1>
-        {!isLoggedIn && (
-          <p className="mt-4 text-lg text-muted-foreground md:text-xl max-w-2xl mx-auto">
-            Esta sección es para uso exclusivo de profesores. Inicie sesión para cargar y administrar los recursos educativos.
-          </p>
-        )}
-      </header>
-
-      {!isLoggedIn ? (
-        <>
-          <Card className="max-w-md mx-auto shadow-xl rounded-xl mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-headline text-xl">
-                <LogIn className="h-6 w-6 text-primary" />
-                Inicio de Sesión
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleLoginSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Nombre</Label>
-                  <Input id="name" name="name" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ingrese su nombre" />
-                </div>
-                <div>
-                  <Label htmlFor="password">Contraseña</Label>
-                  <Input id="password" name="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Ingrese su contraseña" />
-                </div>
-                <div>
-                  <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
-                  <Input id="confirmPassword" name="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirme su contraseña" />
-                </div>
-                {loginError && <p className="text-sm text-destructive">{loginError}</p>}
-                 {feedbackMessage && feedbackMessage.text.includes("Credenciales") && (
-                  <p className={`text-sm ${feedbackMessage.type === 'success' ? 'text-green-600' : 'text-destructive'}`}>{feedbackMessage.text}</p>
-                )}
-                <Button type="submit" className="w-full">Ingresar</Button>
-              </form>
-              <Button variant="outline" onClick={handleSkipLogin} className="w-full mt-3">
-                <SkipForward className="mr-2 h-4 w-4" />
-                Saltar Inicio de Sesión (Test)
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="max-w-3xl mx-auto shadow-xl rounded-xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3 font-headline text-lg">
-                <AlertTriangle className="h-6 w-6 text-destructive" />
-                Acceso Restringido
-              </CardTitle>
-              <CardDescription>
-                Esta funcionalidad está diseñada para que los profesores puedan subir y organizar el material de estudio.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Por favor, inicie sesión para acceder a las herramientas de carga de apuntes.</p>
-            </CardContent>
-          </Card>
-        </>
-      ) : (
-        <>
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-semibold text-foreground">Bienvenido Profesor {loggedInProfessorName}!</h2>
-            <p className="text-muted-foreground">Gestione los recursos educativos (Backend: Simulación en memoria).</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="container mx-auto px-4 py-8">
+        
+        {/* Header with professor info and logout */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+              <User className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Panel de Administración</h1>
+              <p className="text-gray-600">Bienvenido, {professor.name}</p>
+              {professor.department && (
+                <p className="text-sm text-gray-500">{professor.department}</p>
+              )}
+            </div>
           </div>
+          
+          <Button variant="outline" onClick={handleLogout}>
+            <LogOut className="h-4 w-4 mr-2" />
+            Cerrar Sesión
+          </Button>
+        </div>
 
-          <Card className="max-w-2xl mx-auto shadow-xl rounded-xl mb-12" key={formKey} ref={resourceFormCardRef}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-headline text-xl">
-                {isEditing ? <Pencil className="h-6 w-6 text-primary" /> : <UploadCloud className="h-6 w-6 text-primary" />}
-                {isEditing ? "Editar Recurso" : "Cargar Nuevo Recurso"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form id="resourceForm" onSubmit={handleResourceFormSubmit} className="space-y-6">
-                <div>
-                  <Label htmlFor="resourceTypeSelect">Tipo de Recurso</Label>
-                  <Select
-                    name="resourceTypeSelectValue" 
-                    value={selectedResourceType}
-                    onValueChange={(value) => setSelectedResourceType(value as ResourceType | 'assessment' | '')}
-                    disabled={isEditing || isSubmitting} 
-                  >
-                    <SelectTrigger id="resourceTypeSelect">
-                      <SelectValue placeholder="Seleccione un tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {resourceTypeOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          <div className="flex items-center">
-                            {option.icon} {option.label}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+        {/* Feedback Message */}
+        {feedbackMessage && (
+          <div className={`mb-6 p-4 rounded-lg border ${
+            feedbackMessage.type === 'success' 
+              ? 'bg-green-50 border-green-200 text-green-800' 
+              : 'bg-red-50 border-red-200 text-red-800'
+          }`}>
+            <div className="flex items-center gap-2">
+              {feedbackMessage.type === 'success' ? (
+                <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xs">✓</span>
                 </div>
+              ) : (
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+              )}
+              <span>{feedbackMessage.text}</span>
+            </div>
+          </div>
+        )}
 
-                {selectedResourceType && (
-                  <>
-                    <div>
-                      <Label htmlFor="resourceTitle">Título</Label>
-                      <Input name="resourceTitle" id="resourceTitle" type="text" placeholder="Título del recurso" required defaultValue={currentEditingResource?.title ?? ''} disabled={isSubmitting}/>
-                    </div>
-                    <div>
-                      <Label htmlFor="resourceDescription">Descripción</Label>
-                      <Textarea name="resourceDescription" id="resourceDescription" placeholder="Breve descripción del recurso" defaultValue={currentEditingResource?.description ?? ''} disabled={isSubmitting}/>
-                    </div>
-
-                    {(selectedResourceType === 'video' || selectedResourceType === 'article' || selectedResourceType === 'assessment') && (
-                         <div>
-                           <Label htmlFor="resourceLink">Enlace (URL){selectedResourceType === 'assessment' ? ' de Google Form' : ''}</Label>
-                           <Input name="resourceLink" id="resourceLink" type="url" placeholder="https://ejemplo.com/recurso" defaultValue={currentEditingResource?.link ?? currentEditingResource?.googleFormUrl ?? ''} disabled={isSubmitting}/>
-                         </div>
-                       )}
-
-                    {(selectedResourceType === 'pdf' || selectedResourceType === 'image') && (
-                       <div>
-                        <Label htmlFor="resourceFile">Archivo Principal ({selectedResourceType === 'pdf' ? 'PDF' : 'Imagen'})</Label>
-                        {isEditing && currentEditingResource?.fileName && (
-                            <p className="text-xs text-muted-foreground mb-1">Archivo actual: {currentEditingResource.fileName}. Seleccione uno nuevo para reemplazarlo.</p>
-                        )}
-                        <Input name="resourceFile" id="resourceFile" type="file" accept={selectedResourceType === 'pdf' ? '.pdf' : 'image/*'} disabled={isSubmitting}/>
-                       </div>
-                     )}
-
-                    <div>
-                      <Label htmlFor="resourceCoverImageFile">Imagen de Portada/Miniatura (Opcional)</Label>
-                      {isEditing && currentEditingResource?.coverImageName && (
-                            <p className="text-xs text-muted-foreground mb-1">Portada actual: {currentEditingResource.coverImageName}. Seleccione una nueva para reemplazarla.</p>
-                        )}
-                      <Input name="resourceCoverImage" id="resourceCoverImageFile" type="file" accept="image/*" disabled={isSubmitting}/>
-                    </div>
-                     <div>
-                      <Label htmlFor="resourceAiHint">AI Hint (para imagen de portada, máx 2 palabras)</Label>
-                      <Input name="resourceAiHint" id="resourceAiHint" type="text" placeholder="Ej: 'medical book', 'doctor patient'" defaultValue={currentEditingResource?.aiHint ?? ''} disabled={isSubmitting}/>
-                    </div>
-                  </>
-                )}
-                {feedbackMessage && (
-                  <p className={`text-sm ${feedbackMessage.type === 'success' ? 'text-green-600' : 'text-destructive'}`}>{feedbackMessage.text}</p>
-                )}
-                <div className="flex flex-col sm:flex-row gap-2">
-                    <Button type="submit" className="w-full" disabled={!selectedResourceType || isSubmitting}>
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          {isEditing ? "Actualizando..." : "Subiendo..."}
-                        </>
-                      ) : (
-                        <>
-                          {isEditing ? <Pencil className="mr-2 h-4 w-4" /> : <UploadCloud className="mr-2 h-4 w-4" />}
-                          {isEditing ? "Actualizar Recurso" : "Subir Recurso"}
-                        </>
-                      )}
-                    </Button>
-                    {isEditing && (
-                        <Button type="button" variant="outline" onClick={handleCancelEdit} className="w-full" disabled={isSubmitting}>
-                            <XCircle className="mr-2 h-4 w-4" />
-                            Cancelar Edición
-                        </Button>
-                    )}
-                </div>
-              </form>
-            </CardContent>
-             <CardFooter className="flex-col items-start">
-                <Button variant="outline" onClick={() => setIsLoggedIn(false)} className="w-full mt-4" disabled={isSubmitting}>
-                  Cerrar Sesión
-                </Button>
-              </CardFooter>
-          </Card>
-
-          <Card className="max-w-4xl mx-auto shadow-xl rounded-xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-headline text-xl">
-                <BookOpen className="h-6 w-6 text-primary" />
-                Recursos Cargados (Simulación en memoria)
-              </CardTitle>
-              <CardDescription>Ver, editar o eliminar recursos existentes.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-4 flex items-center gap-4">
-                <Label htmlFor="resourceFilterTypeSelect" className="whitespace-nowrap">Filtrar por tipo:</Label>
-                <Select
-                  value={resourceFilterType}
-                  onValueChange={(value) => {
-                    setResourceFilterType(value as ResourceType | 'assessment' | 'all');
-                    setFeedbackMessage(null); 
-                  }}
-                  disabled={isSubmitting}
+        {/* Resource Form */}
+        <Card className="mb-8" ref={resourceFormCardRef}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FilePlus2 className="h-5 w-5" />
+              {isEditing ? 'Editar Recurso' : 'Agregar Nuevo Recurso'}
+            </CardTitle>
+            <CardDescription>
+              {isEditing ? 'Modifica los detalles del recurso' : 'Completa el formulario para agregar un nuevo recurso educativo'}
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent>
+            <form key={formKey} onSubmit={handleSubmit} className="space-y-6">
+              {/* Resource Type Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="resourceType">Tipo de Recurso *</Label>
+                <Select 
+                  name="resourceType" 
+                  value={selectedResourceType} 
+                  onValueChange={setSelectedResourceType}
+                  required
                 >
-                  <SelectTrigger id="resourceFilterTypeSelect" className="w-[200px]">
-                    <SelectValue placeholder="Todos los tipos" />
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona el tipo de recurso" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todos los tipos</SelectItem>
-                    {resourceTypeOptions.map(option => (
+                    {resourceTypeOptions.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         <div className="flex items-center">
-                          {option.icon} {option.label}
+                          {option.icon}
+                          {option.label}
                         </div>
                       </SelectItem>
                     ))}
@@ -400,62 +263,262 @@ export default function AddNotesPage() {
                 </Select>
               </div>
 
-              {isLoadingResources ? (
-                <p>Cargando recursos...</p>
-              ) : resourcesList.length > 0 ? (
-                <div className="space-y-4">
-                  {resourcesList.map(resource => (
-                    <Card key={resource.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 gap-4">
-                      <div className="flex-grow">
-                        <p className="font-semibold">{resource.title}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Tipo: {resourceTypeOptions.find(opt => opt.value === resource.type)?.label || resource.type}
-                        </p>
-                         <p className="text-xs text-muted-foreground">
-                           Subido: {resource.createdAt ? new Date(resource.createdAt).toLocaleDateString() : 'N/A'}
-                        </p>
-                      </div>
-                      <div className="flex gap-2 flex-shrink-0">
-                        <Button variant="outline" size="sm" onClick={() => handleEditClick(resource)} disabled={isSubmitting}>
-                          <Pencil className="h-4 w-4 mr-1 sm:mr-2" /> <span className="hidden sm:inline">Editar</span>
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDeleteResource(resource)} disabled={isSubmitting}>
-                          <Trash2 className="h-4 w-4 mr-1 sm:mr-2" /> <span className="hidden sm:inline">Eliminar</span>
-                        </Button>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <p>No hay recursos para mostrar con el filtro actual.</p>
-              )}
-               {feedbackMessage && feedbackMessage.text.includes("recursos") && (
-                <p className={`mt-4 text-sm ${feedbackMessage.type === 'success' ? 'text-green-600' : 'text-destructive'}`}>{feedbackMessage.text}</p>
-              )}
-            </CardContent>
-          </Card>
-        </>
-      )}
+              {/* Title */}
+              <div className="space-y-2">
+                <Label htmlFor="resourceTitle">Título *</Label>
+                <Input
+                  id="resourceTitle"
+                  name="resourceTitle"
+                  placeholder="Ingresa el título del recurso"
+                  defaultValue={isEditing ? currentEditingResource?.title : ''}
+                  required
+                />
+              </div>
 
-      <Card className="max-w-3xl mx-auto shadow-xl rounded-xl mt-12">
-        <CardHeader>
-          <CardTitle className="font-headline text-lg">Consideraciones para la Carga (PostgreSQL)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="list-disc list-inside text-sm text-muted-foreground space-y-2">
-            <li>
-              Implementarás la lógica de conexión y consulta a tu base de datos PostgreSQL dentro de las Server Actions (en <code>actions.ts</code>).
-            </li>
-            <li>
-              Necesitarás un sistema para manejar la subida de archivos (ej. a un servidor local, AWS S3, etc.) y almacenar las URLs/paths resultantes en tu base de datos PostgreSQL.
-            </li>
-            <li>Asegúrate de que los archivos cumplen con los formatos permitidos.</li>
-            <li>Optimiza el tamaño de los archivos para una mejor experiencia del usuario.</li>
-            <li>Provee títulos claros y descripciones concisas.</li>
-            <li>Verifica que los enlaces proporcionados sean correctos y accesibles.</li>
-          </ul>
-        </CardContent>
-      </Card>
+              {/* Description */}
+              <div className="space-y-2">
+                <Label htmlFor="resourceDescription">Descripción *</Label>
+                <Textarea
+                  id="resourceDescription"
+                  name="resourceDescription"
+                  placeholder="Describe brevemente el contenido del recurso"
+                  defaultValue={isEditing ? currentEditingResource?.description : ''}
+                  required
+                />
+              </div>
+
+              {/* Conditional fields based on resource type */}
+              {selectedResourceType === 'assessment' && (
+                <div className="space-y-2">
+                  <Label htmlFor="resourceLink">URL del Google Form *</Label>
+                  <Input
+                    id="resourceLink"
+                    name="resourceLink"
+                    type="url"
+                    placeholder="https://forms.gle/..."
+                    defaultValue={isEditing ? currentEditingResource?.googleFormUrl : ''}
+                    required
+                  />
+                </div>
+              )}
+
+              {selectedResourceType === 'article' && (
+                <div className="space-y-2">
+                  <Label htmlFor="resourceLink">URL del Artículo *</Label>
+                  <Input
+                    id="resourceLink"
+                    name="resourceLink"
+                    type="url"
+                    placeholder="https://ejemplo.com/articulo"
+                    defaultValue={isEditing ? currentEditingResource?.link : ''}
+                    required
+                  />
+                </div>
+              )}
+
+              {selectedResourceType === 'video' && (
+                <div className="space-y-2">
+                  <Label htmlFor="resourceLink">URL del Video *</Label>
+                  <Input
+                    id="resourceLink"
+                    name="resourceLink"
+                    type="url"
+                    placeholder="https://youtube.com/watch?v=..."
+                    defaultValue={isEditing ? currentEditingResource?.link : ''}
+                    required
+                  />
+                </div>
+              )}
+
+              {/* File upload for PDF and Images */}
+              {(selectedResourceType === 'pdf' || selectedResourceType === 'image') && (
+                <div className="space-y-2">
+                  <Label htmlFor="resourceFile">
+                    Archivo {selectedResourceType === 'pdf' ? 'PDF' : 'de Imagen'}
+                    {!isEditing && ' *'}
+                  </Label>
+                  <Input
+                    id="resourceFile"
+                    name="resourceFile"
+                    type="file"
+                    accept={selectedResourceType === 'pdf' ? '.pdf' : 'image/*'}
+                    required={!isEditing}
+                  />
+                  {isEditing && currentEditingResource?.fileName && (
+                    <p className="text-sm text-gray-600">
+                      Archivo actual: {currentEditingResource.fileName}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Cover image upload */}
+              {selectedResourceType && selectedResourceType !== 'image' && (
+                <div className="space-y-2">
+                  <Label htmlFor="resourceCoverImage">Imagen de Portada (Opcional)</Label>
+                  <Input
+                    id="resourceCoverImage"
+                    name="resourceCoverImage"
+                    type="file"
+                    accept="image/*"
+                  />
+                  {isEditing && currentEditingResource?.coverImageName && (
+                    <p className="text-sm text-gray-600">
+                      Portada actual: {currentEditingResource.coverImageName}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* AI Hint */}
+              <div className="space-y-2">
+                <Label htmlFor="resourceAiHint">Sugerencia para IA (Opcional)</Label>
+                <Textarea
+                  id="resourceAiHint"
+                  name="resourceAiHint"
+                  placeholder="Información adicional que ayude a la IA a recomendar este recurso"
+                  defaultValue={isEditing ? currentEditingResource?.aiHint : ''}
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <Button type="submit" disabled={isSubmitting || !selectedResourceType}>
+                  {isSubmitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <UploadCloud className="h-4 w-4 mr-2" />
+                  )}
+                  {isSubmitting ? 'Procesando...' : (isEditing ? 'Actualizar Recurso' : 'Guardar Recurso')}
+                </Button>
+
+                {isEditing && (
+                  <Button type="button" variant="outline" onClick={handleCancelEdit}>
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Cancelar
+                  </Button>
+                )}
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Resources List */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5" />
+                  Recursos Existentes
+                </CardTitle>
+                <CardDescription>
+                  Gestiona los recursos que has agregado
+                </CardDescription>
+              </div>
+              
+              {/* Filter */}
+              <Select value={resourceFilterType} onValueChange={(value: ResourceType | 'assessment' | 'all') => setResourceFilterType(value)}>
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los tipos</SelectItem>
+                  {resourceTypeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      <div className="flex items-center">
+                        {option.icon}
+                        {option.label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardHeader>
+          
+          <CardContent>
+            {isLoadingResources ? (
+              <div className="text-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+                <p className="text-gray-600">Cargando recursos...</p>
+              </div>
+            ) : filteredResources.length === 0 ? (
+              <div className="text-center py-8">
+                <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">
+                  {resourceFilterType === 'all' 
+                    ? 'No hay recursos agregados aún.' 
+                    : `No hay recursos del tipo ${resourceTypeOptions.find(o => o.value === resourceFilterType)?.label}.`
+                  }
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {filteredResources.map((resource) => (
+                  <Card key={resource.id} className="group hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          {resourceTypeOptions.find(opt => opt.value === resource.type)?.icon}
+                          <span className="text-sm font-medium text-gray-600 capitalize">
+                            {resource.type}
+                          </span>
+                        </div>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            onClick={() => handleEditResource(resource)}
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            onClick={() => handleDeleteResource(resource.id)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <h4 className="font-semibold mb-2 line-clamp-2">{resource.title}</h4>
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-3">{resource.description}</p>
+                      
+                      {resource.coverImageUrl && (
+                        <div className="mb-3">
+                          <img 
+                            src={resource.coverImageUrl} 
+                            alt="Portada" 
+                            className="w-full h-32 object-cover rounded-md"
+                          />
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span>
+                          {new Date(resource.createdAt).toLocaleDateString('es-ES')}
+                        </span>
+                        {resource.link && (
+                          <a 
+                            href={resource.link} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            Ver enlace
+                          </a>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
