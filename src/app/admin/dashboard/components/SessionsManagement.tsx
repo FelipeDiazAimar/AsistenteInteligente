@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Activity, 
   Trash2, 
@@ -161,36 +162,36 @@ export default function SessionsManagement() {
   const expiredSessions = sessions.filter(session => !session.is_active || isSessionExpired(session.expires_at));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Estadísticas rápidas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 md:grid-cols-3 gap-2 md:gap-4">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
+          <CardContent className="p-3 md:p-4">
+            <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
               <Activity className="h-4 w-4 text-green-600" />
-              <span className="text-sm font-medium">Sesiones Activas</span>
+              <span className="text-xs md:text-sm font-medium line-clamp-2 md:line-clamp-1">Sesiones Activas</span>
             </div>
-            <div className="text-2xl font-bold text-green-600">{activeSessions.length}</div>
+            <div className="text-lg md:text-2xl font-bold text-green-600">{activeSessions.length}</div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
+          <CardContent className="p-3 md:p-4">
+            <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
               <Clock className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Sesiones Expiradas</span>
+              <span className="text-xs md:text-sm font-medium line-clamp-2 md:line-clamp-1">Sesiones Expiradas</span>
             </div>
-            <div className="text-2xl font-bold text-muted-foreground">{expiredSessions.length}</div>
+            <div className="text-lg md:text-2xl font-bold text-muted-foreground">{expiredSessions.length}</div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
+          <CardContent className="p-3 md:p-4">
+            <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
               <User className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-medium">Total Sesiones</span>
+              <span className="text-xs md:text-sm font-medium line-clamp-2 md:line-clamp-1">Total Sesiones</span>
             </div>
-            <div className="text-2xl font-bold text-blue-600">{sessions.length}</div>
+            <div className="text-lg md:text-2xl font-bold text-blue-600">{sessions.length}</div>
           </CardContent>
         </Card>
       </div>
@@ -198,17 +199,18 @@ export default function SessionsManagement() {
       {/* Tabla de sesiones activas */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Activity className="h-5 w-5" />
               <CardTitle>Sesiones Activas</CardTitle>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button 
                 onClick={handleCleanExpiredSessions} 
                 variant="outline" 
                 size="sm"
                 disabled={cleaningUp}
+                className="w-full sm:w-auto"
               >
                 {cleaningUp ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -217,7 +219,7 @@ export default function SessionsManagement() {
                 )}
                 Limpiar Expiradas
               </Button>
-              <Button onClick={fetchSessions} variant="outline" size="sm">
+              <Button onClick={fetchSessions} variant="outline" size="sm" className="w-full sm:w-auto">
                 Actualizar
               </Button>
             </div>
@@ -244,33 +246,114 @@ export default function SessionsManagement() {
               </p>
             </div>
           ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Profesor</TableHead>
-                    <TableHead>Departamento</TableHead>
-                    <TableHead>Inicio de Sesión</TableHead>
-                    <TableHead>Expira</TableHead>
-                    <TableHead>Tiempo Restante</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {activeSessions.map((session) => (
-                    <TableRow key={session.id}>
-                      <TableCell>
+            <>
+              {/* Desktop table with horizontal scroll */}
+              <div className="hidden lg:block">
+                <ScrollArea className="w-full">
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="min-w-[200px]">Profesor</TableHead>
+                          <TableHead className="min-w-[150px]">Departamento</TableHead>
+                          <TableHead className="min-w-[140px]">Inicio de Sesión</TableHead>
+                          <TableHead className="min-w-[140px]">Expira</TableHead>
+                          <TableHead className="min-w-[130px]">Tiempo Restante</TableHead>
+                          <TableHead className="min-w-[100px]">Estado</TableHead>
+                          <TableHead className="min-w-[100px]">Acciones</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {activeSessions.map((session) => (
+                          <TableRow key={session.id}>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">{session.professor_name}</div>
+                                <div className="text-sm text-muted-foreground">{session.professor_email}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell>{session.department}</TableCell>
+                            <TableCell>{formatDate(session.created_at)}</TableCell>
+                            <TableCell>{formatDate(session.expires_at)}</TableCell>
+                            <TableCell>
+                              <span className={`font-mono text-sm ${
+                                getTimeRemaining(session.expires_at) === 'Expirada' 
+                                  ? 'text-red-600' 
+                                  : getTimeRemaining(session.expires_at).includes('m') && parseInt(getTimeRemaining(session.expires_at)) < 5
+                                    ? 'text-orange-600' 
+                                    : 'text-green-600'
+                              }`}>
+                                {getTimeRemaining(session.expires_at)}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="default" className="bg-green-100 text-green-800">
+                                Activa
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleCloseSession(session.id)}
+                              >
+                                <LogOut className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </ScrollArea>
+              </div>
+
+              {/* Mobile card layout */}
+              <div className="lg:hidden space-y-3">
+                {activeSessions.map((session) => (
+                  <Card key={session.id} className="p-3">
+                    <div className="space-y-3">
+                      {/* Header with status and actions */}
+                      <div className="flex items-center justify-between">
+                        <Badge variant="default" className="bg-green-100 text-green-800 text-xs">
+                          Activa
+                        </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCloseSession(session.id)}
+                        >
+                          <LogOut className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      {/* Professor info */}
+                      <div>
+                        <h3 className="font-medium text-sm">{session.professor_name}</h3>
+                        <p className="text-xs text-muted-foreground line-clamp-1">{session.professor_email}</p>
+                      </div>
+                      
+                      {/* Department */}
+                      <div>
+                        <p className="text-xs"><span className="font-medium">Depto:</span> {session.department}</p>
+                      </div>
+                      
+                      {/* Time info in grid */}
+                      <div className="grid grid-cols-2 gap-2 text-xs">
                         <div>
-                          <div className="font-medium">{session.professor_name}</div>
-                          <div className="text-sm text-muted-foreground">{session.professor_email}</div>
+                          <span className="font-medium block">Inicio:</span>
+                          <span className="text-muted-foreground">{formatDate(session.created_at)}</span>
                         </div>
-                      </TableCell>
-                      <TableCell>{session.department}</TableCell>
-                      <TableCell>{formatDate(session.created_at)}</TableCell>
-                      <TableCell>{formatDate(session.expires_at)}</TableCell>
-                      <TableCell>
-                        <span className={`font-mono text-sm ${
+                        <div>
+                          <span className="font-medium block">Expira:</span>
+                          <span className="text-muted-foreground">{formatDate(session.expires_at)}</span>
+                        </div>
+                      </div>
+                      
+                      {/* Time remaining - prominent */}
+                      <div className="text-center p-2 bg-muted/50 rounded">
+                        <span className="text-xs font-medium block">Tiempo restante</span>
+                        <span className={`font-mono text-sm font-bold ${
                           getTimeRemaining(session.expires_at) === 'Expirada' 
                             ? 'text-red-600' 
                             : getTimeRemaining(session.expires_at).includes('m') && parseInt(getTimeRemaining(session.expires_at)) < 5
@@ -279,26 +362,12 @@ export default function SessionsManagement() {
                         }`}>
                           {getTimeRemaining(session.expires_at)}
                         </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="default" className="bg-green-100 text-green-800">
-                          Activa
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCloseSession(session.id)}
-                        >
-                          <LogOut className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -313,38 +382,82 @@ export default function SessionsManagement() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Profesor</TableHead>
-                    <TableHead>Departamento</TableHead>
-                    <TableHead>Inicio de Sesión</TableHead>
-                    <TableHead>Expiró</TableHead>
-                    <TableHead>Estado</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {expiredSessions.slice(0, 10).map((session) => (
-                    <TableRow key={session.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{session.professor_name}</div>
-                          <div className="text-sm text-muted-foreground">{session.professor_email}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{session.department}</TableCell>
-                      <TableCell>{formatDate(session.created_at)}</TableCell>
-                      <TableCell>{formatDate(session.expires_at)}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">
-                          Expirada
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            {/* Desktop table with horizontal scroll */}
+            <div className="hidden lg:block">
+              <ScrollArea className="w-full">
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[200px]">Profesor</TableHead>
+                        <TableHead className="min-w-[150px]">Departamento</TableHead>
+                        <TableHead className="min-w-[140px]">Inicio de Sesión</TableHead>
+                        <TableHead className="min-w-[140px]">Expiró</TableHead>
+                        <TableHead className="min-w-[100px]">Estado</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {expiredSessions.slice(0, 10).map((session) => (
+                        <TableRow key={session.id}>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{session.professor_name}</div>
+                              <div className="text-sm text-muted-foreground">{session.professor_email}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{session.department}</TableCell>
+                          <TableCell>{formatDate(session.created_at)}</TableCell>
+                          <TableCell>{formatDate(session.expires_at)}</TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">
+                              Expirada
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </ScrollArea>
+            </div>
+
+            {/* Mobile card layout */}
+            <div className="lg:hidden space-y-3">
+              {expiredSessions.slice(0, 10).map((session) => (
+                <Card key={session.id} className="p-3">
+                  <div className="space-y-3">
+                    {/* Header with status */}
+                    <div className="flex items-center justify-between">
+                      <Badge variant="secondary" className="text-xs">
+                        Expirada
+                      </Badge>
+                    </div>
+                    
+                    {/* Professor info */}
+                    <div>
+                      <h3 className="font-medium text-sm">{session.professor_name}</h3>
+                      <p className="text-xs text-muted-foreground line-clamp-1">{session.professor_email}</p>
+                    </div>
+                    
+                    {/* Department */}
+                    <div>
+                      <p className="text-xs"><span className="font-medium">Depto:</span> {session.department}</p>
+                    </div>
+                    
+                    {/* Time info in grid */}
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="font-medium block">Inicio:</span>
+                        <span className="text-muted-foreground">{formatDate(session.created_at)}</span>
+                      </div>
+                      <div>
+                        <span className="font-medium block">Expiró:</span>
+                        <span className="text-muted-foreground">{formatDate(session.expires_at)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
             </div>
           </CardContent>
         </Card>

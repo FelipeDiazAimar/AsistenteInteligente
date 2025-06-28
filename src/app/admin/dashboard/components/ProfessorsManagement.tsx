@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
@@ -268,55 +269,110 @@ export default function ProfessorsManagement() {
             </Alert>
           )}
           
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Departamento</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Creado</TableHead>
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {professors.map((professor) => (
-                  <TableRow key={professor.id}>
-                    <TableCell className="font-medium">{professor.name}</TableCell>
-                    <TableCell>{professor.email}</TableCell>
-                    <TableCell>{professor.department}</TableCell>
-                    <TableCell>
-                      <Badge variant={professor.is_active ? "default" : "secondary"}>
-                        {professor.is_active ? 'Activo' : 'Inactivo'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(professor.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(professor)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(professor.id)}
-                          disabled={professor.email === 'admin1@admin1.com'}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          {/* Desktop Table */}
+          <div className="hidden md:block rounded-md border">
+            <ScrollArea className="w-full">
+              <div className="min-w-[800px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nombre</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Departamento</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead>Creado</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {professors.map((professor) => (
+                      <TableRow key={professor.id}>
+                        <TableCell className="font-medium">{professor.name}</TableCell>
+                        <TableCell className="max-w-[200px] truncate">{professor.email}</TableCell>
+                        <TableCell>{professor.department}</TableCell>
+                        <TableCell>
+                          <Badge variant={professor.is_active ? "default" : "secondary"}>
+                            {professor.is_active ? 'Activo' : 'Inactivo'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {new Date(professor.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEdit(professor)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDelete(professor.id)}
+                              disabled={professor.email === 'admin1@admin1.com'}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </ScrollArea>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-3">
+            {professors.map((professor) => (
+              <Card key={professor.id} className="p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="space-y-1">
+                    <h3 className="font-medium text-sm">{professor.name}</h3>
+                    <p className="text-xs text-muted-foreground break-all">{professor.email}</p>
+                  </div>
+                  <Badge variant={professor.is_active ? "default" : "secondary"} className="text-xs">
+                    {professor.is_active ? 'Activo' : 'Inactivo'}
+                  </Badge>
+                </div>
+                
+                <div className="space-y-2 mb-3">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Departamento:</span>
+                    <span className="font-medium">{professor.department}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Creado:</span>
+                    <span>{new Date(professor.created_at).toLocaleDateString()}</span>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(professor)}
+                    className="flex-1"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Editar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDelete(professor.id)}
+                    disabled={professor.email === 'admin1@admin1.com'}
+                    className="flex-1"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Eliminar
+                  </Button>
+                </div>
+              </Card>
+            ))}
           </div>
         </CardContent>
       </Card>

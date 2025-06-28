@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   BookOpen, 
   Trash2, 
@@ -167,47 +168,86 @@ export default function ResourcesManagement() {
               </p>
             </div>
           ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Título</TableHead>
-                    <TableHead>Descripción</TableHead>
-                    <TableHead>Archivo / IA Hint</TableHead>
-                    <TableHead>Creado</TableHead>
-                    <TableHead>Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {resources.map((resource) => (
-                    <TableRow key={resource.id}>
-                      <TableCell>
+            <>
+              {/* Desktop table with horizontal scroll */}
+              <div className="hidden md:block">
+                <ScrollArea className="w-full">
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="min-w-[120px]">Tipo</TableHead>
+                          <TableHead className="min-w-[200px]">Título</TableHead>
+                          <TableHead className="min-w-[250px]">Descripción</TableHead>
+                          <TableHead className="min-w-[200px]">Archivo / IA Hint</TableHead>
+                          <TableHead className="min-w-[120px]">Creado</TableHead>
+                          <TableHead className="min-w-[100px]">Acciones</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {resources.map((resource) => (
+                          <TableRow key={resource.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                {getTypeIcon(resource.type)}
+                                <Badge className={getTypeBadgeColor(resource.type)}>
+                                  {resource.type.toUpperCase()}
+                                </Badge>
+                              </div>
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              <div className="max-w-[180px] truncate" title={resource.title}>
+                                {resource.title}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="max-w-[230px] truncate" title={resource.description}>
+                                {resource.description}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium max-w-[180px] truncate" title={resource.file_name || resource.title}>
+                                  {resource.file_name || resource.title}
+                                </div>
+                                <div className="text-sm text-muted-foreground max-w-[180px] truncate" title={resource.ai_hint || 'Sin pista de IA'}>
+                                  {resource.ai_hint || 'Sin pista de IA'}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {new Date(resource.created_at).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDelete(resource.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </ScrollArea>
+              </div>
+
+              {/* Mobile card layout */}
+              <div className="md:hidden space-y-4">
+                {resources.map((resource) => (
+                  <Card key={resource.id} className="p-4">
+                    <div className="space-y-3">
+                      {/* Header with type and actions */}
+                      <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           {getTypeIcon(resource.type)}
                           <Badge className={getTypeBadgeColor(resource.type)}>
                             {resource.type.toUpperCase()}
                           </Badge>
                         </div>
-                      </TableCell>
-                      <TableCell className="font-medium max-w-xs truncate">
-                        {resource.title}
-                      </TableCell>
-                      <TableCell className="max-w-sm truncate">
-                        {resource.description}
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{resource.file_name || resource.title}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {resource.ai_hint || 'Sin pista de IA'}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(resource.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
                         <Button
                           variant="outline"
                           size="sm"
@@ -215,12 +255,37 @@ export default function ResourcesManagement() {
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                      </div>
+                      
+                      {/* Title */}
+                      <div>
+                        <h3 className="font-medium text-base line-clamp-2">{resource.title}</h3>
+                      </div>
+                      
+                      {/* Description */}
+                      <div>
+                        <p className="text-sm text-muted-foreground line-clamp-3">{resource.description}</p>
+                      </div>
+                      
+                      {/* File info */}
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium line-clamp-1" title={resource.file_name || resource.title}>
+                          📁 {resource.file_name || resource.title}
+                        </div>
+                        <div className="text-xs text-muted-foreground line-clamp-2" title={resource.ai_hint || 'Sin pista de IA'}>
+                          🤖 {resource.ai_hint || 'Sin pista de IA'}
+                        </div>
+                      </div>
+                      
+                      {/* Date */}
+                      <div className="text-xs text-muted-foreground">
+                        Creado: {new Date(resource.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

@@ -49,7 +49,7 @@ function HeaderComponent() {
                   <span className="sr-only">Alternar Menú</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="md:hidden w-[280px] sm:w-[300px]">
+              <SheetContent side="left" className="md:hidden w-[280px] sm:w-[300px]" {...({} as any)}>
                 <SheetHeader>
                   <SheetTitle>Menú de Navegación</SheetTitle>
                 </SheetHeader>
