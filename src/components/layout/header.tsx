@@ -20,31 +20,13 @@ function HeaderComponent() {
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between px-2 sm:px-4 lg:px-6">
-        <Link href="/" className="flex items-center gap-2 min-w-0 flex-1 mr-4">
-          <span className="text-sm sm:text-lg md:text-xl font-bold tracking-tight font-headline truncate">
-            <span className="hidden sm:inline">Compañero de </span>
-            <span>Atención Primaria</span>
-          </span>
-        </Link>
-        
-        <div className="flex items-center gap-2 sm:gap-4 md:gap-8 flex-shrink-0">
-          <div className="ml-1">
-            <ThemeToggleButton />
-          </div>
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={handleGoBack}
-            className="h-8 w-8 sm:h-9 sm:w-9 rounded-full hover:bg-blue-100 hover:border-blue-300 hover:text-blue-700 transition-colors duration-200"
-            title="Volver atrás"
-          >
-            <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="sr-only">Volver atrás</span>
-          </Button>
+        {/* Sección izquierda: Menú móvil + Logo */}
+        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+          {/* Botón del menú móvil en la izquierda */}
           {isMobile ? (
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="md:hidden h-8 w-8 sm:h-9 sm:w-9">
+                <Button variant="outline" size="icon" className="md:hidden h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0">
                   <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
                   <span className="sr-only">Alternar Menú</span>
                 </Button>
@@ -91,6 +73,31 @@ function HeaderComponent() {
           ) : (
             <SidebarTrigger className="hidden group-data-[variant=inset]:md:flex" />
           )}
+          
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2 min-w-0 flex-1">
+            <span className="text-sm sm:text-lg md:text-xl font-bold tracking-tight font-headline truncate">
+              <span className="hidden sm:inline">Compañero de </span>
+              <span>Atención Primaria</span>
+            </span>
+          </Link>
+        </div>
+        
+        {/* Sección derecha: Botones de acción */}
+        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+          <div className="ml-1">
+            <ThemeToggleButton />
+          </div>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={handleGoBack}
+            className="h-8 w-8 sm:h-9 sm:w-9 rounded-full hover:bg-blue-100 hover:border-blue-300 hover:text-blue-700 transition-colors duration-200"
+            title="Volver atrás"
+          >
+            <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="sr-only">Volver atrás</span>
+          </Button>
         </div>
       </div>
     </header>
