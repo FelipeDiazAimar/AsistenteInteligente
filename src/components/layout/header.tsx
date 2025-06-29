@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Menu, ArrowLeft, Home, BookOpen, FileText, Video, Image as ImageIcon, ClipboardCheck, FilePlus2 } from 'lucide-react';
+import { Menu, ArrowLeft, Home, BookOpen, FileText, Video, Image as ImageIcon, ClipboardCheck, FilePlus2, HeartPulse } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from '@/components/ui/sheet';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
@@ -51,8 +51,11 @@ function HeaderComponent() {
               </SheetTrigger>
               <SheetContent side="left" className="md:hidden w-[280px] sm:w-[300px]" {...({} as any)}>
                 <SheetHeader>
-                  <SheetTitle>Menú de Navegación</SheetTitle>
-                </SheetHeader>
+                  <SheetTitle className="flex items-center gap-2">
+                    <HeartPulse className="h-5 w-5 text-sky-500" />
+                    <span>Menú de Navegación</span>
+                  </SheetTitle>                
+                  </SheetHeader>
                 <nav className="flex flex-col gap-4 mt-6">
                   <Link href="/" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
                     <Home className="h-5 w-5" />
