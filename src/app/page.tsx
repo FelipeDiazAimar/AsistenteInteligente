@@ -35,6 +35,19 @@ export default function HomePage() {
   const [isLoadingChat, setIsLoadingChat] = useState(false);
   const [hasUserSentFirstMessage, setHasUserSentFirstMessage] = useState(false);
 
+  // Función para hacer scroll al final
+  const scrollToBottom = () => {
+    if (scrollAreaRef.current) {
+      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (viewport) {
+        // Usar requestAnimationFrame para asegurar que el DOM se haya actualizado
+        requestAnimationFrame(() => {
+          viewport.scrollTop = viewport.scrollHeight;
+        });
+      }
+    }
+  };
+
   const clearPdfContext = () => {
     if (pdfVisualUrl) {
       URL.revokeObjectURL(pdfVisualUrl);
@@ -122,13 +135,9 @@ export default function HomePage() {
   }, [pdfVisualUrl]);
 
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (viewport) {
-        viewport.scrollTop = viewport.scrollHeight;
-      }
-    }
-  }, [messages]);
+    // Scroll al final automáticamente cuando cambien los mensajes o el estado de carga
+    scrollToBottom();
+  }, [messages, isLoadingChat]); // Incluir isLoadingChat en las dependencias
 
   const handleSendMessage = async (event?: FormEvent<HTMLFormElement>) => {
     if (event) event.preventDefault();
@@ -159,6 +168,9 @@ export default function HomePage() {
 
     setChatInput('');
     setIsLoadingChat(true);
+
+    // Hacer scroll después de agregar el mensaje del usuario
+    setTimeout(scrollToBottom, 100);
 
     try {
       const flowInput: PrimaryCareChatInput = {
@@ -191,6 +203,9 @@ export default function HomePage() {
       };
       setMessages(prev => [...prev, assistantMessage]);
 
+      // Hacer scroll después de agregar la respuesta del asistente
+      setTimeout(scrollToBottom, 100);
+
     } catch (error) {
       console.error("Error calling chat flow:", error);
       const errorMessage: ChatMessage = {
@@ -199,8 +214,12 @@ export default function HomePage() {
         content: 'Lo siento, ha ocurrido un error al procesar tu solicitud.',
       };
       setMessages(prev => [...prev, errorMessage]);
+      // Hacer scroll después de agregar mensaje de error
+      setTimeout(scrollToBottom, 100);
     } finally {
       setIsLoadingChat(false);
+      // Hacer scroll final cuando termine el loading
+      setTimeout(scrollToBottom, 150);
     }
   };
 
@@ -219,7 +238,7 @@ export default function HomePage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* AI Chat Assistant Column */}
         <Card className="flex flex-col shadow-lg rounded-xl h-[500px] sm:h-[600px] lg:h-[700px]">
-          <CardHeader className="flex-shrink-0">
+          <CardHeader className="flex-shrink-0 border-b">
             <CardTitle className="flex items-center gap-2 font-headline text-lg sm:text-xl">
               <MessageCircle className="text-accent h-5 w-5 sm:h-6 sm:w-6" />
               Asistente de Chat IA
@@ -232,9 +251,9 @@ export default function HomePage() {
               </div>
             )}
           </CardHeader>
-          <CardContent className="flex-grow flex flex-col p-0">
-            <ScrollArea className="flex-grow min-h-0 p-3 sm:p-4 lg:p-6" ref={scrollAreaRef}>
-              <div className="space-y-3 sm:space-y-4">
+          <CardContent className="flex-grow flex flex-col p-0 overflow-hidden">
+            <ScrollArea className="flex-grow h-full p-3 sm:p-4 lg:p-6" ref={scrollAreaRef}>
+              <div className="space-y-3 sm:space-y-4 pb-4">{/* Agregar padding bottom */}
                 {messages.map((msg) => (
                   <div key={msg.id} className={cn("flex items-start gap-2 sm:gap-3", msg.role === 'user' && "justify-end")}>
                     {msg.role === 'assistant' && (
