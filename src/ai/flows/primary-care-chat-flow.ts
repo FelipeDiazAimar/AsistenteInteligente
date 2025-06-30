@@ -10,8 +10,22 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit'; 
 
-// Importar la librería core de pdf-parse directamente para evitar el código de debug
-const pdfParseCore = require('pdf-parse/lib/pdf-parse.js');
+// Importar pdf-parse de manera segura para el entorno servidor/cliente
+let pdfParseCore: any;
+
+// Función para cargar pdf-parse dinámicamente
+async function getPdfParser() {
+  if (!pdfParseCore) {
+    try {
+      // Usar require normal que es más compatible
+      pdfParseCore = require('pdf-parse');
+    } catch (error) {
+      console.error('⚠️ Failed to load pdf-parse:', error);
+      return null;
+    }
+  }
+  return pdfParseCore;
+}
 
 // Define the schema for individual messages in the chat history
 const ChatMessageSchema = z.object({
@@ -74,7 +88,14 @@ async function getPdfTextFromDataUri(dataUri: string): Promise<string | null> {
 
   try {
     console.log('🔄 Starting PDF parsing with pdf-parse...');
-    const data = await pdfParseCore(pdfBuffer);
+    const pdfParser = await getPdfParser();
+    
+    if (!pdfParser) {
+      console.error('❌ Could not load PDF parser');
+      return null;
+    }
+    
+    const data = await pdfParser(pdfBuffer);
     console.log('✅ pdf-parse completed successfully');
     
     if (data && typeof data.text === 'string') {
@@ -207,7 +228,8 @@ export async function primaryCareChat(input: PrimaryCareChatInput): Promise<Prim
 }
 
 export async function extractTextFromPdfBuffer(pdfBuffer: Buffer): Promise<string> {
-  const data = await pdfParseCore(pdfBuffer);
+  const pdfParser = await getPdfParser();
+  const data = await pdfParser(pdfBuffer);
   return data.text;
 }
 

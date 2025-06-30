@@ -9,36 +9,45 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   webpack: (config, { isServer }) => {
-    // Configuración para pdf-parse para evitar problemas con archivos de test
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      'pdf-parse': 'pdf-parse/lib/pdf-parse.js'
-    };
-
-    // Ignora los archivos de test de pdf-parse
-    config.externals = config.externals || [];
+    // Configuración diferente para servidor vs cliente
     if (isServer) {
-      config.externals.push({
-        'pdf-parse/test/data/05-versions-space.pdf': 'commonjs pdf-parse/test/data/05-versions-space.pdf'
-      });
+      // En el servidor, externalizar completamente pdf-parse para evitar conflictos
+      config.externals = [...(config.externals || []), 'pdf-parse'];
+    } else {
+      // En el cliente, configurar alias para usar la versión core
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'pdf-parse': 'pdf-parse/lib/pdf-parse.js'
+      };
     }
 
-    // Configuración para ignorar handlebars require.extensions warnings
+    // Configuración de fallbacks para ambos entornos
     config.resolve.fallback = {
       ...config.resolve.fallback,
       fs: false,
       path: false,
+      canvas: false,
+      jsdom: false,
     };
 
-    // Ignorar archivos problemáticos de handlebars
-    config.module.rules.push({
-      test: /node_modules\/handlebars\/lib\/index\.js$/,
-      use: 'null-loader'
-    });
+    // Ignorar archivos problemáticos
+    config.module.rules.push(
+      {
+        test: /node_modules\/handlebars\/lib\/index\.js$/,
+        use: 'null-loader'
+      },
+      {
+        test: /node_modules\/pdf-parse\/test\/data\/.*\.pdf$/,
+        use: 'null-loader'
+      }
+    );
 
-    // Configuración adicional para ignorar warnings de require.extensions
+    // Configuración adicional para ignorar warnings
     config.ignoreWarnings = [
       /require\.extensions is not supported by webpack/,
+      /Critical dependency: the request of a dependency is an expression/,
+      /Module not found: Can't resolve 'canvas'/,
+      /Module not found: Can't resolve 'jsdom'/,
     ];
 
     return config;
