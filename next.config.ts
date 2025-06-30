@@ -23,11 +23,23 @@ const nextConfig: NextConfig = {
       });
     }
 
-    // Configuración para manejar handlebars warnings
+    // Configuración para ignorar handlebars require.extensions warnings
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      path: false,
+    };
+
+    // Ignorar archivos problemáticos de handlebars
     config.module.rules.push({
       test: /node_modules\/handlebars\/lib\/index\.js$/,
-      loader: 'null-loader'
+      use: 'null-loader'
     });
+
+    // Configuración adicional para ignorar warnings de require.extensions
+    config.ignoreWarnings = [
+      /require\.extensions is not supported by webpack/,
+    ];
 
     return config;
   },
