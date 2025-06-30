@@ -8,12 +8,22 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Upload, Send, MessageCircle, User, Bot, FileSearch, XCircle, FileCheck2 } from "lucide-react";
 import { cn } from '@/lib/utils';
-import { primaryCareChat, type PrimaryCareChatInput, type PrimaryCareChatOutput } from '@/ai/flows/primary-care-chat-flow';
 
 interface ChatMessage {
   id: string;
   role: "user" | "assistant" | "system";
   content: string;
+}
+
+interface ChatApiRequest {
+  question: string;
+  history?: { role: 'user' | 'assistant'; content: string; }[];
+  pdfContextDataUri?: string;
+}
+
+interface ChatApiResponse {
+  answer: string;
+  error?: string;
 }
 
 const exampleMessages: ChatMessage[] = [
@@ -173,14 +183,14 @@ export default function HomePage() {
     setTimeout(scrollToBottom, 100);
 
     try {
-      const flowInput: PrimaryCareChatInput = {
+      const apiRequest: ChatApiRequest = {
         question: currentMessageContent,
         history: historyForFlow.length > 0 ? historyForFlow : undefined,
         pdfContextDataUri: pdfDataUri || undefined, // Pass data URI if available
       };
       
-      console.log('=== CHAT FLOW DEBUG ===');
-      console.log('📤 Sending to primaryCareChat flow:');
+      console.log('=== CHAT API DEBUG ===');
+      console.log('📤 Sending to chat API:');
       console.log('- Question:', currentMessageContent);
       console.log('- History length:', historyForFlow.length);
       console.log('- Has PDF context:', !!pdfDataUri);
@@ -189,12 +199,28 @@ export default function HomePage() {
         console.log('- PDF Data URI prefix:', pdfDataUri.substring(0, 100));
       }
       
-      const result: PrimaryCareChatOutput = await primaryCareChat(flowInput);
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(apiRequest),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      }
+
+      const result: ChatApiResponse = await response.json();
       
-      console.log('📥 Received from primaryCareChat flow:');
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      
+      console.log('📥 Received from chat API:');
       console.log('- Answer length:', result.answer.length);
       console.log('- Answer preview:', result.answer.substring(0, 100) + (result.answer.length > 100 ? '...' : ''));
-      console.log('=== END CHAT FLOW DEBUG ===');
+      console.log('=== END CHAT API DEBUG ===');
       
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
