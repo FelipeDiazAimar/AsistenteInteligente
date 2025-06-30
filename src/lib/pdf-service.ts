@@ -1,6 +1,6 @@
 /**
- * PDF Service - Manejo robusto de pdf-parse solo en servidor
- * Esta implementación evita cargar pdf-parse durante el build de Next.js
+ * PDF Service - Manejo ultra-robusto de pdf-parse
+ * Evita completamente la carga durante el build de Next.js
  */
 
 // Tipo para el resultado de pdf-parse
@@ -10,68 +10,76 @@ interface PdfParseResult {
   info: any;
 }
 
-// Cache para el módulo pdf-parse
-let pdfParseModule: any = null;
-let pdfParseLoadAttempted = false;
+// Estado del módulo
+let pdfParseFunction: any = null;
+let loadAttempted = false;
 
 /**
- * Carga pdf-parse de manera dinámica y segura
- * Solo se ejecuta en el servidor y solo cuando es necesario
+ * Carga pdf-parse de manera completamente dinámica
+ * Usa múltiples estrategias para evitar problemas de build
  */
-async function loadPdfParse(): Promise<any> {
-  // Verificar que estamos en el servidor
+async function loadPdfParseUltraSafe(): Promise<any> {
+  // Solo en servidor
   if (typeof window !== 'undefined') {
     throw new Error('PDF parsing is only available on the server side');
   }
 
-  // Si ya intentamos cargar y falló, no intentar de nuevo
-  if (pdfParseLoadAttempted && !pdfParseModule) {
-    throw new Error('pdf-parse could not be loaded previously');
+  // Durante build de Next.js, no cargar
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    console.log('🚫 Skipping pdf-parse during Next.js build phase');
+    throw new Error('PDF parsing not available during build');
   }
 
-  // Si ya está cargado, devolverlo
-  if (pdfParseModule) {
-    return pdfParseModule;
+  // Si ya se intentó y falló, no reintentar
+  if (loadAttempted && !pdfParseFunction) {
+    throw new Error('pdf-parse loading failed previously');
   }
 
-  pdfParseLoadAttempted = true;
-
-  // Durante el build de Next.js, no intentar cargar pdf-parse
-  if (process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build') {
-    console.log('⚠️ Skipping pdf-parse loading during production build');
-    throw new Error('PDF parsing not available during build phase');
+  // Si ya está cargado, retornar
+  if (pdfParseFunction) {
+    return pdfParseFunction;
   }
+
+  loadAttempted = true;
 
   try {
-    // Método 1: Usar eval para evitar que Webpack procese la importación
-    pdfParseModule = eval('require')('pdf-parse');
-    console.log('✅ pdf-parse loaded successfully via eval require');
-    return pdfParseModule;
-  } catch (evalError) {
-    console.error('⚠️ Failed to load pdf-parse via eval require:', evalError);
-    
+    // Estrategia 1: Require dinámico con eval para evitar static analysis
+    const moduleName = 'pdf-parse';
+    const requireFn = eval('require');
+    pdfParseFunction = requireFn(moduleName);
+    console.log('✅ pdf-parse loaded via eval require');
+    return pdfParseFunction;
+  } catch (error1) {
+    console.warn('⚠️ Eval require failed:', error1);
+
     try {
-      // Método 2: Import dinámico como fallback
-      const importedModule = await eval('import("pdf-parse")');
-      pdfParseModule = importedModule.default || importedModule;
-      console.log('✅ pdf-parse loaded successfully via dynamic import');
-      return pdfParseModule;
-    } catch (importError) {
-      console.error('⚠️ Failed to load pdf-parse via dynamic import:', importError);
-      
-      try {
-        // Método 3: Require directo (último recurso)
-        const { createRequire } = eval('require')('module');
-        const require = createRequire(import.meta.url || __filename);
-        pdfParseModule = require('pdf-parse');
-        console.log('✅ pdf-parse loaded successfully via createRequire');
-        return pdfParseModule;
-      } catch (requireError) {
-        console.error('❌ All pdf-parse loading methods failed:', requireError);
-        pdfParseModule = null;
-        const errorMessage = requireError instanceof Error ? requireError.message : 'Unknown error';
-        throw new Error('Could not load pdf-parse module: ' + errorMessage);
+      // Estrategia 2: Function constructor para máximo dinamismo
+      const loadPdf = new Function('moduleName', `
+        try {
+          return require(moduleName);
+        } catch (e) {
+          return null;
+        }
+      `);
+      pdfParseFunction = loadPdf('pdf-parse');
+      if (pdfParseFunction) {
+        console.log('✅ pdf-parse loaded via Function constructor');
+        return pdfParseFunction;
       }
+    } catch (error2) {
+      console.warn('⚠️ Function constructor failed:', error2);
+    }
+
+    try {
+      // Estrategia 3: Dynamic import como último recurso
+      const module = await import('pdf-parse');
+      pdfParseFunction = module.default || module;
+      console.log('✅ pdf-parse loaded via dynamic import');
+      return pdfParseFunction;
+    } catch (error3) {
+      console.error('❌ All loading strategies failed');
+      pdfParseFunction = null;
+      throw new Error('Could not load pdf-parse: ' + String(error3));
     }
   }
 }
@@ -85,7 +93,7 @@ export async function extractTextFromPdfBuffer(pdfBuffer: Buffer): Promise<strin
   }
 
   try {
-    const pdfParse = await loadPdfParse();
+    const pdfParse = await loadPdfParseUltraSafe();
     const result: PdfParseResult = await pdfParse(pdfBuffer);
     return result.text || '';
   } catch (error) {
@@ -145,13 +153,13 @@ export async function extractTextFromPdfDataUri(dataUri: string): Promise<string
  * Verifica si pdf-parse está disponible sin intentar cargarlo
  */
 export function isPdfParseAvailable(): boolean {
-  return typeof window === 'undefined' && pdfParseModule !== null;
+  return typeof window === 'undefined' && pdfParseFunction !== null;
 }
 
 /**
  * Limpia el cache de pdf-parse (útil para testing)
  */
 export function clearPdfParseCache(): void {
-  pdfParseModule = null;
-  pdfParseLoadAttempted = false;
+  pdfParseFunction = null;
+  loadAttempted = false;
 }

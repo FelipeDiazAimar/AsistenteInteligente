@@ -9,26 +9,31 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   webpack: (config, { isServer, dev }) => {
-    // Configuraciones específicas para el servidor
+    // Configuración ultra-robusta para evitar problemas con pdf-parse
+    
     if (isServer) {
-      // En el servidor, externalizar solo las dependencias problemáticas
-      config.externals = [...(config.externals || []), 'canvas', 'jsdom'];
+      // En el servidor, externalizar todas las dependencias problemáticas
+      const externals = ['canvas', 'jsdom', 'pdf2pic'];
       
-      // En producción, externalizar pdf-parse para evitar problemas de build
+      // En producción, también externalizar pdf-parse completamente
       if (!dev) {
-        config.externals.push('pdf-parse');
+        externals.push('pdf-parse');
       }
+      
+      config.externals = [...(config.externals || []), ...externals];
     } else {
-      // En el cliente, evitar completamente pdf-parse y sus dependencias
+      // En el cliente, bloquear completamente pdf-parse y dependencias relacionadas
       config.resolve.alias = {
         ...config.resolve.alias,
         'pdf-parse': false,
         'pdf2pic': false,
         'node-ensure': false,
+        'canvas': false,
+        'jsdom': false,
       };
     }
 
-    // Configuración de fallbacks para ambos entornos
+    // Fallbacks globales
     config.resolve.fallback = {
       ...config.resolve.fallback,
       fs: false,
@@ -38,29 +43,41 @@ const nextConfig: NextConfig = {
       'pdf-parse': false,
       'pdf2pic': false,
       'node-ensure': false,
+      stream: false,
+      util: false,
+      buffer: false,
     };
 
-    // Ignorar módulos problemáticos durante el build
+    // Reglas de módulos más agresivas
     config.module.rules.push(
+      // Bloquear completamente pdf-parse en cliente y en builds de producción
       {
-        test: /node_modules\/pdf-parse\/.*\.js$/,
+        test: /node_modules\/pdf-parse/,
         use: isServer && dev ? 'babel-loader' : 'null-loader'
       },
+      // Bloquear handlebars problemático
       {
         test: /node_modules\/handlebars\/lib\/index\.js$/,
         use: 'null-loader'
       },
+      // Bloquear archivos de test de pdf-parse
       {
-        test: /node_modules\/pdf-parse\/test\/data\/.*\.pdf$/,
+        test: /node_modules\/pdf-parse\/test/,
         use: 'null-loader'
       },
+      // Bloquear babel runtime problemático
       {
-        test: /node_modules\/@babel\/runtime\/.*\.js$/,
+        test: /node_modules\/@babel\/runtime/,
+        use: 'null-loader'
+      },
+      // Bloquear jQuery y dependencias relacionadas que causan h.noConflict
+      {
+        test: /node_modules\/jquery/,
         use: 'null-loader'
       }
     );
 
-    // Ignorar warnings específicos
+    // Ignorar todos los warnings relacionados
     config.ignoreWarnings = [
       /require\.extensions is not supported by webpack/,
       /Critical dependency: the request of a dependency is an expression/,
@@ -69,6 +86,8 @@ const nextConfig: NextConfig = {
       /Module not found: Can't resolve 'pdf-parse'/,
       /Module not found: Can't resolve 'babel-loader'/,
       /Can't resolve 'babel-loader'/,
+      /Module not found: Can't resolve 'jquery'/,
+      /noConflict/,
     ];
 
     return config;
