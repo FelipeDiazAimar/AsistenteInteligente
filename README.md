@@ -2,7 +2,7 @@
 
 **Asistente de aprendizaje impulsado por IA para atención primaria de la salud**
 
-[![Deployed on Render](https://img.shields.io/badge/Deployed%20on-Render-46E3B7?style=for-the-badge&logo=render)](https://asistenteinteligente.onrender.com)
+[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-000000?style=for-the-badge&logo=vercel)](https://asistente-inteligente.vercel.app)
 [![Next.js](https://img.shields.io/badge/Next.js-15.2.3-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4.1-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
@@ -23,7 +23,7 @@ Una aplicación web moderna diseñada para asistir a profesionales de la salud e
 
 ## 🚀 Demo en Vivo
 
-Visita la aplicación en funcionamiento: [https://asistenteinteligente.onrender.com/](https://asistenteinteligente.onrender.com/)
+Visita la aplicación en funcionamiento: [https://asistente-inteligente.vercel.app/](https://asistente-inteligente.vercel.app/)
 
 ## 🛠️ Tecnologías Utilizadas
 
