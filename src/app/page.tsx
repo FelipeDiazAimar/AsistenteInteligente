@@ -57,41 +57,58 @@ export default function HomePage() {
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    console.log('=== FILE UPLOAD DEBUG ===');
+    console.log('File selected:', file ? file.name : 'None');
+    console.log('File type:', file ? file.type : 'N/A');
+    console.log('File size:', file ? file.size : 'N/A');
 
     // Clear any existing PDF context first
     clearPdfContext();
 
     if (file && file.type === "application/pdf") {
+      console.log('✅ Valid PDF file detected, processing...');
       setSelectedFile(file);
       const objectUrl = URL.createObjectURL(file);
       setPdfVisualUrl(objectUrl);
+      console.log('📄 Object URL created for preview:', objectUrl.substring(0, 50) + '...');
 
       // Read file as Data URI for Genkit flow
       const reader = new FileReader();
       reader.onload = (loadEvent) => {
         if (loadEvent.target?.result) {
-          setPdfDataUri(loadEvent.target.result as string);
+          const dataUri = loadEvent.target.result as string;
+          console.log('✅ FileReader completed successfully');
+          console.log('📊 Data URI length:', dataUri.length);
+          console.log('📝 Data URI prefix:', dataUri.substring(0, 100));
+          setPdfDataUri(dataUri);
+          console.log('=== END FILE UPLOAD DEBUG ===');
         } else {
-          console.error("Failed to read file as Data URI");
+          console.error("❌ Failed to read file as Data URI");
           alert("Error al leer el archivo PDF para el contexto del chat.");
           clearPdfContext(); // Clear if reading failed
+          console.log('=== END FILE UPLOAD DEBUG ===');
         }
       };
       reader.onerror = () => {
-        console.error("FileReader error");
+        console.error("❌ FileReader error");
         alert("Error al procesar el archivo PDF.");
         clearPdfContext();
+        console.log('=== END FILE UPLOAD DEBUG ===');
       };
       reader.readAsDataURL(file);
 
     } else {
       if (file) {
+        console.log('❌ Invalid file type:', file.type);
         alert("Por favor, selecciona un archivo PDF.");
+      } else {
+        console.log('ℹ️ No file selected or file selection cancelled');
       }
       // Ensure file input is reset if no valid file or cancelled
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+      console.log('=== END FILE UPLOAD DEBUG ===');
     }
   };
 
@@ -150,7 +167,22 @@ export default function HomePage() {
         pdfContextDataUri: pdfDataUri || undefined, // Pass data URI if available
       };
       
+      console.log('=== CHAT FLOW DEBUG ===');
+      console.log('📤 Sending to primaryCareChat flow:');
+      console.log('- Question:', currentMessageContent);
+      console.log('- History length:', historyForFlow.length);
+      console.log('- Has PDF context:', !!pdfDataUri);
+      if (pdfDataUri) {
+        console.log('- PDF Data URI length:', pdfDataUri.length);
+        console.log('- PDF Data URI prefix:', pdfDataUri.substring(0, 100));
+      }
+      
       const result: PrimaryCareChatOutput = await primaryCareChat(flowInput);
+      
+      console.log('📥 Received from primaryCareChat flow:');
+      console.log('- Answer length:', result.answer.length);
+      console.log('- Answer preview:', result.answer.substring(0, 100) + (result.answer.length > 100 ? '...' : ''));
+      console.log('=== END CHAT FLOW DEBUG ===');
       
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),

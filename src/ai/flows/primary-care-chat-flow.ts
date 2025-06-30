@@ -9,7 +9,9 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit'; 
-// import pdfParse from 'pdf-parse'; // Temporalmente comentado para evitar errores
+
+// Importar la librería core de pdf-parse directamente para evitar el código de debug
+const pdfParseCore = require('pdf-parse/lib/pdf-parse.js');
 
 // Define the schema for individual messages in the chat history
 const ChatMessageSchema = z.object({
@@ -32,8 +34,10 @@ const PrimaryCareChatOutputSchema = z.object({
 export type PrimaryCareChatOutput = z.infer<typeof PrimaryCareChatOutputSchema>;
 
 async function getPdfTextFromDataUri(dataUri: string): Promise<string | null> {
+  console.log('🔍 getPdfTextFromDataUri called with URI length:', dataUri.length);
+  
   if (!dataUri.startsWith('data:application/pdf;base64,')) {
-    console.error('Invalid Data URI: Does not start with "data:application/pdf;base64,". URI prefix:', dataUri.substring(0, 100));
+    console.error('❌ Invalid Data URI: Does not start with "data:application/pdf;base64,". URI prefix:', dataUri.substring(0, 100));
     return null;
   }
   
@@ -41,39 +45,65 @@ async function getPdfTextFromDataUri(dataUri: string): Promise<string | null> {
   const base64MarkerIndex = dataUri.indexOf(base64Marker);
 
   if (base64MarkerIndex === -1) {
-    console.error('Invalid Data URI: Missing ";base64," marker. URI prefix:', dataUri.substring(0, 100));
+    console.error('❌ Invalid Data URI: Missing ";base64," marker. URI prefix:', dataUri.substring(0, 100));
     return null;
   }
 
   const base64Data = dataUri.substring(base64MarkerIndex + base64Marker.length);
+  console.log('📊 Base64 data length after extraction:', base64Data.length);
 
   if (!base64Data) {
-    console.error('PDF data URI is empty after marker.');
+    console.error('❌ PDF data URI is empty after marker.');
     return null;
   }
 
   let pdfBuffer: Buffer;
   try {
+    console.log('🔄 Creating buffer from base64 data...');
     pdfBuffer = Buffer.from(base64Data, 'base64');
+    console.log('✅ Buffer created successfully, size:', pdfBuffer.length, 'bytes');
   } catch (bufferError) {
-    console.error('Error creating buffer from base64 data. URI prefix:', dataUri.substring(0,100) , 'Error:', bufferError instanceof Error ? bufferError.message : String(bufferError));
+    console.error('❌ Error creating buffer from base64 data. URI prefix:', dataUri.substring(0,100) , 'Error:', bufferError instanceof Error ? bufferError.message : String(bufferError));
     return null;
   }
 
   if (pdfBuffer.length === 0) {
-    console.error('PDF buffer is empty after base64 decoding. URI prefix:', dataUri.substring(0,100));
+    console.error('❌ PDF buffer is empty after base64 decoding. URI prefix:', dataUri.substring(0,100));
     return null;
   }
 
   try {
-    // const data = await pdfParse(pdfBuffer); // Temporalmente comentado
-    // if (data && typeof data.text === 'string') {
-    //     return data.text;
-    // }
-    console.error('PDF parsing temporarily disabled');
-    return null;
+    console.log('🔄 Starting PDF parsing with pdf-parse...');
+    const data = await pdfParseCore(pdfBuffer);
+    console.log('✅ pdf-parse completed successfully');
+    
+    if (data && typeof data.text === 'string') {
+        console.log('✅ PDF text extracted successfully. Text length:', data.text.length);
+        console.log('📝 PDF text preview (first 200 chars):', data.text.substring(0, 200));
+        console.log('📄 PDF metadata - Pages:', data.numpages, 'Info:', data.info);
+        return data.text;
+    } else {
+        console.error('❌ PDF parsing failed: No text data returned');
+        return null;
+    }
   } catch (error) {
-    console.error('pdf-parse failed during PDF text extraction. URI prefix:', dataUri.substring(0, 50), 'Error message:', error instanceof Error ? error.message : String(error));
+    console.error('❌ pdf-parse failed during PDF text extraction.');
+    console.error('❌ Error type:', error instanceof Error ? error.constructor.name : typeof error);
+    console.error('❌ Error message:', error instanceof Error ? error.message : String(error));
+    
+    // Intentar diferentes enfoques según el tipo de error
+    if (error instanceof Error) {
+      if (error.message.includes('bad XRef') || error.message.includes('FormatError')) {
+        console.log('🔄 PDF format error detected, trying alternative parsing...');
+        // Podríamos intentar con otro parser o devolver un error específico
+        return null;
+      } else if (error.message.includes('Invalid PDF') || error.message.includes('startxref')) {
+        console.log('🔄 Invalid PDF structure detected');
+        return null;
+      }
+    }
+    
+    console.error('❌ Full error object:', error);
     return null;
   }
 }
@@ -97,17 +127,25 @@ const primaryCareChatFlow = ai.defineFlow(
 
     let pdfTextContext = '';
     if (payload.pdfContextDataUri) {
+      console.log('📄 PDF Context Data URI received, starting extraction...');
+      console.log('📊 PDF URI length:', payload.pdfContextDataUri.length);
       try {
         const extractedText = await getPdfTextFromDataUri(payload.pdfContextDataUri);
         if (extractedText) {
+          console.log('✅ PDF text extracted successfully. Length:', extractedText.length, 'characters');
+          console.log('📝 PDF text preview (first 200 chars):', extractedText.substring(0, 200));
           pdfTextContext = `El usuario ha proporcionado el siguiente contenido de un PDF como contexto adicional:\n---\n${extractedText}\n---\nConsidera esta información al responder.\n\n`;
+          console.log('📤 PDF context prepared for AI, total context length:', pdfTextContext.length);
         } else {
+          console.log('⚠️ PDF text extraction returned null or empty');
           pdfTextContext = "Se intentó leer un PDF proporcionado por el usuario, pero no se pudo extraer su contenido. Informa al usuario si es relevante.\n\n";
         }
       } catch (pdfProcessingError) {
-        console.error('Critical error during PDF context processing in primaryCareChatFlow:', pdfProcessingError instanceof Error ? pdfProcessingError.message : String(pdfProcessingError));
+        console.error('❌ Critical error during PDF context processing in primaryCareChatFlow:', pdfProcessingError instanceof Error ? pdfProcessingError.message : String(pdfProcessingError));
         pdfTextContext = "Ocurrió un error crítico al procesar el PDF proporcionado y no se pudo utilizar como contexto. Por favor, intenta con otro archivo o continúa sin adjuntar un PDF.\n\n";
       }
+    } else {
+      console.log('ℹ️ No PDF context provided');
     }
     
     const systemMessageContent = `${pdfTextContext}Eres un tutor inteligente/asistente de IA útil para "Primary Care Companion", una pagina diseñada para ayudar a los estudiantes a aprender y consultar sobre temas de atención primaria. Responde siempre en español. Contesta las preguntas de manera precisa y concisa, y organizada, basándote en tu conocimiento sobre atención primaria.`;
@@ -169,8 +207,7 @@ export async function primaryCareChat(input: PrimaryCareChatInput): Promise<Prim
 }
 
 export async function extractTextFromPdfBuffer(pdfBuffer: Buffer): Promise<string> {
-  // const data = await pdfParse(pdfBuffer); // Temporalmente comentado
-  // return data.text;
-  return 'PDF parsing temporarily disabled';
+  const data = await pdfParseCore(pdfBuffer);
+  return data.text;
 }
 
