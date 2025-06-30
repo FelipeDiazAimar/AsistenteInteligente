@@ -11,13 +11,18 @@ const nextConfig: NextConfig = {
   webpack: (config, { isServer }) => {
     // Configuración diferente para servidor vs cliente
     if (isServer) {
-      // En el servidor, externalizar completamente pdf-parse para evitar conflictos
-      config.externals = [...(config.externals || []), 'pdf-parse'];
-    } else {
-      // En el cliente, configurar alias para usar la versión core
+      // En el servidor, permitir pdf-parse pero configurar externals problemáticos
+      config.externals = [...(config.externals || []), 'canvas', 'jsdom'];
+      
+      // Configurar resolve para pdf-parse en el servidor
       config.resolve.alias = {
         ...config.resolve.alias,
-        'pdf-parse': 'pdf-parse/lib/pdf-parse.js'
+      };
+    } else {
+      // En el cliente, evitar completamente pdf-parse
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'pdf-parse': false,
       };
     }
 
@@ -28,6 +33,7 @@ const nextConfig: NextConfig = {
       path: false,
       canvas: false,
       jsdom: false,
+      'pdf-parse': false,
     };
 
     // Ignorar archivos problemáticos
@@ -39,6 +45,11 @@ const nextConfig: NextConfig = {
       {
         test: /node_modules\/pdf-parse\/test\/data\/.*\.pdf$/,
         use: 'null-loader'
+      },
+      {
+        test: /node_modules\/pdf-parse\/.*\.js$/,
+        exclude: isServer ? undefined : /./,
+        use: isServer ? 'babel-loader' : 'null-loader'
       }
     );
 
@@ -48,6 +59,7 @@ const nextConfig: NextConfig = {
       /Critical dependency: the request of a dependency is an expression/,
       /Module not found: Can't resolve 'canvas'/,
       /Module not found: Can't resolve 'jsdom'/,
+      /Module not found: Can't resolve 'pdf-parse'/,
     ];
 
     return config;

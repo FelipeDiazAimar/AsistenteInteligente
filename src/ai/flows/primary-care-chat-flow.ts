@@ -13,18 +13,51 @@ import { z } from 'genkit';
 // Importar pdf-parse de manera segura para el entorno servidor/cliente
 let pdfParseCore: any;
 
-// Función para cargar pdf-parse dinámicamente
+// Función para cargar pdf-parse dinámicamente - solo en servidor
 async function getPdfParser() {
+  // Verificar que estamos en el servidor
+  if (typeof window !== 'undefined') {
+    console.error('⚠️ PDF parsing is only available on the server side');
+    return null;
+  }
+
   if (!pdfParseCore) {
     try {
-      // Usar require normal que es más compatible
-      pdfParseCore = require('pdf-parse');
-    } catch (error) {
-      console.error('⚠️ Failed to load pdf-parse:', error);
-      return null;
+      // Primero intentar dynamic import
+      const pdfParseModule = await import('pdf-parse');
+      pdfParseCore = pdfParseModule.default || pdfParseModule;
+      console.log('✅ pdf-parse loaded successfully via import');
+    } catch (importError) {
+      console.error('⚠️ Failed to import pdf-parse:', importError);
+      // Fallback: intentar con require
+      try {
+        pdfParseCore = eval('require')('pdf-parse');
+        console.log('✅ pdf-parse loaded successfully via require');
+      } catch (requireError) {
+        console.error('⚠️ Failed to require pdf-parse:', requireError);
+        // Último intento: verificar si pdf-parse ya está disponible globalmente
+        try {
+          pdfParseCore = global.require ? global.require('pdf-parse') : null;
+          if (pdfParseCore) {
+            console.log('✅ pdf-parse loaded successfully via global.require');
+          }
+        } catch (globalError) {
+          console.error('⚠️ All pdf-parse loading methods failed:', globalError);
+          return null;
+        }
+      }
     }
   }
-  return pdfParseCore;
+  
+  // Verificar que el módulo tiene la función correcta
+  if (pdfParseCore && typeof pdfParseCore === 'function') {
+    return pdfParseCore;
+  } else if (pdfParseCore && pdfParseCore.default && typeof pdfParseCore.default === 'function') {
+    return pdfParseCore.default;
+  } else {
+    console.error('⚠️ pdf-parse module loaded but does not have the expected function');
+    return null;
+  }
 }
 
 // Define the schema for individual messages in the chat history
@@ -49,6 +82,12 @@ export type PrimaryCareChatOutput = z.infer<typeof PrimaryCareChatOutputSchema>;
 
 async function getPdfTextFromDataUri(dataUri: string): Promise<string | null> {
   console.log('🔍 getPdfTextFromDataUri called with URI length:', dataUri.length);
+  
+  // Verificar que estamos en el servidor
+  if (typeof window !== 'undefined') {
+    console.error('❌ PDF processing is only available on the server side');
+    return null;
+  }
   
   if (!dataUri.startsWith('data:application/pdf;base64,')) {
     console.error('❌ Invalid Data URI: Does not start with "data:application/pdf;base64,". URI prefix:', dataUri.substring(0, 100));
@@ -137,6 +176,14 @@ const primaryCareChatFlow = ai.defineFlow(
     outputSchema: PrimaryCareChatOutputSchema,
   },
   async (payload): Promise<PrimaryCareChatOutput> => {
+    // Verificar que estamos en el servidor
+    if (typeof window !== 'undefined') {
+      console.error('❌ Primary Care Chat Flow can only run on the server');
+      return { 
+        answer: 'Error de configuración: Esta función solo puede ejecutarse en el servidor.' 
+      };
+    }
+
     const apiKey = process.env.OPENROUTER_API_KEY;
 
     if (!apiKey) {
@@ -228,7 +275,16 @@ export async function primaryCareChat(input: PrimaryCareChatInput): Promise<Prim
 }
 
 export async function extractTextFromPdfBuffer(pdfBuffer: Buffer): Promise<string> {
+  // Verificar que estamos en el servidor
+  if (typeof window !== 'undefined') {
+    throw new Error('PDF processing is only available on the server side');
+  }
+  
   const pdfParser = await getPdfParser();
+  if (!pdfParser) {
+    throw new Error('PDF parser could not be loaded');
+  }
+  
   const data = await pdfParser(pdfBuffer);
   return data.text;
 }
