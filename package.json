@@ -8,6 +8,8 @@
     "start": "node server.js",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "test-build": "node scripts/test-build.js",
+    "build-safe": "cross-env NODE_ENV=production NEXT_PHASE=phase-production-build next build",
     "hash-passwords": "tsx scripts/hash-passwords.ts",
     "setup-db": "tsx scripts/setup-database.ts",
     "setup-db-pg": "tsx scripts/setup-database-pg.ts",

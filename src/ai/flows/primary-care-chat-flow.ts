@@ -9,56 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit'; 
-
-// Importar pdf-parse de manera segura para el entorno servidor/cliente
-let pdfParseCore: any;
-
-// Función para cargar pdf-parse dinámicamente - solo en servidor
-async function getPdfParser() {
-  // Verificar que estamos en el servidor
-  if (typeof window !== 'undefined') {
-    console.error('⚠️ PDF parsing is only available on the server side');
-    return null;
-  }
-
-  if (!pdfParseCore) {
-    try {
-      // Primero intentar dynamic import
-      const pdfParseModule = await import('pdf-parse');
-      pdfParseCore = pdfParseModule.default || pdfParseModule;
-      console.log('✅ pdf-parse loaded successfully via import');
-    } catch (importError) {
-      console.error('⚠️ Failed to import pdf-parse:', importError);
-      // Fallback: intentar con require
-      try {
-        pdfParseCore = eval('require')('pdf-parse');
-        console.log('✅ pdf-parse loaded successfully via require');
-      } catch (requireError) {
-        console.error('⚠️ Failed to require pdf-parse:', requireError);
-        // Último intento: verificar si pdf-parse ya está disponible globalmente
-        try {
-          pdfParseCore = global.require ? global.require('pdf-parse') : null;
-          if (pdfParseCore) {
-            console.log('✅ pdf-parse loaded successfully via global.require');
-          }
-        } catch (globalError) {
-          console.error('⚠️ All pdf-parse loading methods failed:', globalError);
-          return null;
-        }
-      }
-    }
-  }
-  
-  // Verificar que el módulo tiene la función correcta
-  if (pdfParseCore && typeof pdfParseCore === 'function') {
-    return pdfParseCore;
-  } else if (pdfParseCore && pdfParseCore.default && typeof pdfParseCore.default === 'function') {
-    return pdfParseCore.default;
-  } else {
-    console.error('⚠️ pdf-parse module loaded but does not have the expected function');
-    return null;
-  }
-}
+import { extractTextFromPdfDataUri } from '@/lib/pdf-service';
 
 // Define the schema for individual messages in the chat history
 const ChatMessageSchema = z.object({
@@ -88,82 +39,14 @@ async function getPdfTextFromDataUri(dataUri: string): Promise<string | null> {
     console.error('❌ PDF processing is only available on the server side');
     return null;
   }
-  
-  if (!dataUri.startsWith('data:application/pdf;base64,')) {
-    console.error('❌ Invalid Data URI: Does not start with "data:application/pdf;base64,". URI prefix:', dataUri.substring(0, 100));
-    return null;
-  }
-  
-  const base64Marker = ';base64,';
-  const base64MarkerIndex = dataUri.indexOf(base64Marker);
-
-  if (base64MarkerIndex === -1) {
-    console.error('❌ Invalid Data URI: Missing ";base64," marker. URI prefix:', dataUri.substring(0, 100));
-    return null;
-  }
-
-  const base64Data = dataUri.substring(base64MarkerIndex + base64Marker.length);
-  console.log('📊 Base64 data length after extraction:', base64Data.length);
-
-  if (!base64Data) {
-    console.error('❌ PDF data URI is empty after marker.');
-    return null;
-  }
-
-  let pdfBuffer: Buffer;
-  try {
-    console.log('🔄 Creating buffer from base64 data...');
-    pdfBuffer = Buffer.from(base64Data, 'base64');
-    console.log('✅ Buffer created successfully, size:', pdfBuffer.length, 'bytes');
-  } catch (bufferError) {
-    console.error('❌ Error creating buffer from base64 data. URI prefix:', dataUri.substring(0,100) , 'Error:', bufferError instanceof Error ? bufferError.message : String(bufferError));
-    return null;
-  }
-
-  if (pdfBuffer.length === 0) {
-    console.error('❌ PDF buffer is empty after base64 decoding. URI prefix:', dataUri.substring(0,100));
-    return null;
-  }
 
   try {
-    console.log('🔄 Starting PDF parsing with pdf-parse...');
-    const pdfParser = await getPdfParser();
-    
-    if (!pdfParser) {
-      console.error('❌ Could not load PDF parser');
-      return null;
-    }
-    
-    const data = await pdfParser(pdfBuffer);
-    console.log('✅ pdf-parse completed successfully');
-    
-    if (data && typeof data.text === 'string') {
-        console.log('✅ PDF text extracted successfully. Text length:', data.text.length);
-        console.log('📝 PDF text preview (first 200 chars):', data.text.substring(0, 200));
-        console.log('📄 PDF metadata - Pages:', data.numpages, 'Info:', data.info);
-        return data.text;
-    } else {
-        console.error('❌ PDF parsing failed: No text data returned');
-        return null;
-    }
+    const extractedText = await extractTextFromPdfDataUri(dataUri);
+    console.log('✅ PDF text extracted successfully. Length:', extractedText.length);
+    console.log('📝 PDF text preview (first 200 chars):', extractedText.substring(0, 200));
+    return extractedText;
   } catch (error) {
-    console.error('❌ pdf-parse failed during PDF text extraction.');
-    console.error('❌ Error type:', error instanceof Error ? error.constructor.name : typeof error);
-    console.error('❌ Error message:', error instanceof Error ? error.message : String(error));
-    
-    // Intentar diferentes enfoques según el tipo de error
-    if (error instanceof Error) {
-      if (error.message.includes('bad XRef') || error.message.includes('FormatError')) {
-        console.log('🔄 PDF format error detected, trying alternative parsing...');
-        // Podríamos intentar con otro parser o devolver un error específico
-        return null;
-      } else if (error.message.includes('Invalid PDF') || error.message.includes('startxref')) {
-        console.log('🔄 Invalid PDF structure detected');
-        return null;
-      }
-    }
-    
-    console.error('❌ Full error object:', error);
+    console.error('❌ Error extracting PDF text:', error instanceof Error ? error.message : String(error));
     return null;
   }
 }
@@ -280,12 +163,12 @@ export async function extractTextFromPdfBuffer(pdfBuffer: Buffer): Promise<strin
     throw new Error('PDF processing is only available on the server side');
   }
   
-  const pdfParser = await getPdfParser();
-  if (!pdfParser) {
-    throw new Error('PDF parser could not be loaded');
+  try {
+    const { extractTextFromPdfBuffer: extractFromBuffer } = await import('@/lib/pdf-service');
+    return await extractFromBuffer(pdfBuffer);
+  } catch (error) {
+    console.error('❌ Error in extractTextFromPdfBuffer:', error);
+    throw error;
   }
-  
-  const data = await pdfParser(pdfBuffer);
-  return data.text;
 }
 

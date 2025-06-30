@@ -8,21 +8,23 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  webpack: (config, { isServer }) => {
-    // Configuración diferente para servidor vs cliente
+  webpack: (config, { isServer, dev }) => {
+    // Configuraciones específicas para el servidor
     if (isServer) {
-      // En el servidor, permitir pdf-parse pero configurar externals problemáticos
+      // En el servidor, externalizar solo las dependencias problemáticas
       config.externals = [...(config.externals || []), 'canvas', 'jsdom'];
       
-      // Configurar resolve para pdf-parse en el servidor
-      config.resolve.alias = {
-        ...config.resolve.alias,
-      };
+      // En producción, externalizar pdf-parse para evitar problemas de build
+      if (!dev) {
+        config.externals.push('pdf-parse');
+      }
     } else {
-      // En el cliente, evitar completamente pdf-parse
+      // En el cliente, evitar completamente pdf-parse y sus dependencias
       config.resolve.alias = {
         ...config.resolve.alias,
         'pdf-parse': false,
+        'pdf2pic': false,
+        'node-ensure': false,
       };
     }
 
@@ -34,10 +36,16 @@ const nextConfig: NextConfig = {
       canvas: false,
       jsdom: false,
       'pdf-parse': false,
+      'pdf2pic': false,
+      'node-ensure': false,
     };
 
-    // Ignorar archivos problemáticos
+    // Ignorar módulos problemáticos durante el build
     config.module.rules.push(
+      {
+        test: /node_modules\/pdf-parse\/.*\.js$/,
+        use: isServer && dev ? 'babel-loader' : 'null-loader'
+      },
       {
         test: /node_modules\/handlebars\/lib\/index\.js$/,
         use: 'null-loader'
@@ -47,19 +55,20 @@ const nextConfig: NextConfig = {
         use: 'null-loader'
       },
       {
-        test: /node_modules\/pdf-parse\/.*\.js$/,
-        exclude: isServer ? undefined : /./,
-        use: isServer ? 'babel-loader' : 'null-loader'
+        test: /node_modules\/@babel\/runtime\/.*\.js$/,
+        use: 'null-loader'
       }
     );
 
-    // Configuración adicional para ignorar warnings
+    // Ignorar warnings específicos
     config.ignoreWarnings = [
       /require\.extensions is not supported by webpack/,
       /Critical dependency: the request of a dependency is an expression/,
       /Module not found: Can't resolve 'canvas'/,
       /Module not found: Can't resolve 'jsdom'/,
       /Module not found: Can't resolve 'pdf-parse'/,
+      /Module not found: Can't resolve 'babel-loader'/,
+      /Can't resolve 'babel-loader'/,
     ];
 
     return config;
