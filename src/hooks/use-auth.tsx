@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('/api/auth/me');
+      const response = await fetch('/api/auth/me', { signal: AbortSignal.timeout(4000) });
       const data = await response.json();
       
       if (data.authenticated && data.professor) {

@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Recorta el JS que se envía al navegador (navegación más liviana).
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'date-fns', 'recharts', '@radix-ui/react-icons'],
+  },
   webpack: (config, { isServer, dev }) => {
     // Configuración ultra-robusta para evitar problemas con pdf-parse
     

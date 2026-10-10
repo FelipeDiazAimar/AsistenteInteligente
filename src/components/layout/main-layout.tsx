@@ -168,26 +168,24 @@ function MainLayoutInternal({ children }: { children: ReactNode }) {
             <SidebarMenu>
               {sidebarNavItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
-                  <Link href={item.href} legacyBehavior passHref>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href) && (pathname.split('/').length === item.href.split('/').length || pathname.startsWith(item.href + '/')))}
-                      tooltip={item.tooltip}
-                      className={cn(
-                        (pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href) && (pathname.split('/').length === item.href.split('/').length || pathname.startsWith(item.href + '/'))))
-                          ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/80"
-                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                      )}
-                    >
-                      <a>
-                        {item.icon}
-                        <span className={cn(
-                          "transition-opacity duration-300",
-                          "group-data-[state=collapsed]:opacity-0 group-data-[state=collapsed]:hidden group-data-[state=expanded]:opacity-100 group-data-[state=expanded]:block"
-                        )}>{item.label}</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </Link>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href) && (pathname.split('/').length === item.href.split('/').length || pathname.startsWith(item.href + '/')))}
+                    tooltip={item.tooltip}
+                    className={cn(
+                      (pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href) && (pathname.split('/').length === item.href.split('/').length || pathname.startsWith(item.href + '/'))))
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/80"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    )}
+                  >
+                    <Link href={item.href} prefetch={true}>
+                      {item.icon}
+                      <span className={cn(
+                        "transition-opacity duration-300",
+                        "group-data-[state=collapsed]:opacity-0 group-data-[state=collapsed]:hidden group-data-[state=expanded]:opacity-100 group-data-[state=expanded]:block"
+                      )}>{item.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>

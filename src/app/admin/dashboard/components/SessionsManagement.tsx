@@ -81,8 +81,8 @@ export default function SessionsManagement() {
     fetchSessions();
     // En modo demo no se sondea la API.
     if (demo) return;
-    // Refrescar cada 5 segundos para mostrar tiempo restante en tiempo real
-    const interval = setInterval(fetchSessions, 5000);
+    // Refrescar cada 30 segundos (antes cada 5: competía con la navegación)
+    const interval = setInterval(fetchSessions, 30000);
     return () => clearInterval(interval);
   }, [fetchSessions, demo]);
 

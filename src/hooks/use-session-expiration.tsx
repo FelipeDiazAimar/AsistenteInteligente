@@ -3,6 +3,7 @@
 import { useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from './use-auth';
+import { isDemoMode } from '@/lib/demo';
 
 export function useSessionExpiration() {
   const router = useRouter();
@@ -10,9 +11,11 @@ export function useSessionExpiration() {
 
   // Función para verificar si la sesión ha expirado
   const checkSessionExpiration = useCallback(async () => {
+    if (isDemoMode()) return;
     try {
       const response = await fetch('/api/auth/me', {
-        credentials: 'include'
+        credentials: 'include',
+        signal: AbortSignal.timeout(4000),
       });
 
       if (!response.ok || response.status === 401) {
@@ -42,6 +45,8 @@ export function useSessionExpiration() {
   }, []);
 
   useEffect(() => {
+    // En modo demo no hay sesiones que vigilar.
+    if (isDemoMode()) return;
     // Verificar sesión cada 2 minutos (120,000 ms)
     const sessionCheckInterval = setInterval(checkSessionExpiration, 2 * 60 * 1000);
 

@@ -39,6 +39,11 @@ export default function AdminDashboard() {
 
   // Verificar si el usuario es admin (en modo demo, admin@demo.local también es admin)
   useEffect(() => {
+    // En demo no se espera al auth: vista previa inmediata.
+    if (demo) {
+      setLoading(false);
+      return;
+    }
     if (authLoading) return;
     if (user) {
       const userIsAdmin =
@@ -58,7 +63,7 @@ export default function AdminDashboard() {
     router.push('/admin/login');
   };
 
-  if (loading || authLoading) {
+  if (!demo && (loading || authLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="text-center">

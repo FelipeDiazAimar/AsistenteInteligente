@@ -1,4 +1,5 @@
 const express = require('express');
+const compression = require('compression');
 const next = require('next');
 const path = require('path');
 
@@ -9,6 +10,11 @@ const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
   const server = express();
+
+  server.disable('x-powered-by');
+  // Compresión gzip: el custom server de Express no la trae por defecto
+  // (next start sí). Recorta ~70% el HTML/JS transferido.
+  server.use(compression({ threshold: 1024 }));
 
   // (Opcional) Servir archivos estáticos personalizados
   // server.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
