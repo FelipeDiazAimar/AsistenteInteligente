@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Upload, Send, MessageCircle, User, Bot, FileSearch, XCircle, FileCheck2, ArrowRight, BookOpen, ClipboardCheck, FilePlus2, Sparkles } from "lucide-react";
 import { cn } from '@/lib/utils';
+import { demoChatReply } from '@/lib/demo';
 
 interface ChatMessage {
   id: string;
@@ -245,13 +246,21 @@ export default function HomePage() {
 
     } catch (error) {
       console.error("Error calling chat flow:", error);
-      const errorMessage: ChatMessage = {
+      // Fallback genérico: aunque el servidor falle, el chat siempre responde
+      // con una respuesta demo en vez de un mensaje de error.
+      let fallback: string;
+      try {
+        fallback = demoChatReply(currentMessageContent);
+      } catch {
+        fallback = 'Estoy en modo demo: puedo ayudarte con los apuntes de hipertensión, diabetes tipo 2 y vacunación del adulto. Probá con una de las preguntas sugeridas.';
+      }
+      const demoMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'Lo siento, ha ocurrido un error al procesar tu solicitud.',
+        content: fallback,
       };
-      setMessages(prev => [...prev, errorMessage]);
-      setChatError('No se pudo obtener respuesta. Revisa tu conexión e inténtalo de nuevo.');
+      setMessages(prev => [...prev, demoMessage]);
+      setChatError('Sin conexión con el servidor: te muestro una respuesta demo. Podés reintentar.');
       setLastFailedQuestion(currentMessageContent);
       // Hacer scroll después de agregar mensaje de error
       setTimeout(scrollToBottom, 100);
