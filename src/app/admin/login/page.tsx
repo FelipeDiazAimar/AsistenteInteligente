@@ -64,59 +64,59 @@ function LoginForm() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4 sm:p-6">
-      <Card className="w-full max-w-sm border-border shadow-md sm:max-w-md">
+    <div className="flex min-h-[100dvh] items-center justify-center overflow-x-clip bg-muted/40 px-4 py-8">
+      <Card className="mx-auto w-full max-w-sm min-w-0 border-border shadow-md">
         <CardHeader className="space-y-3 pb-4 text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/20">
-            <GraduationCap className="h-7 w-7 text-primary" />
+            <GraduationCap className="h-7 w-7 shrink-0 text-primary" />
           </div>
-          <div className="space-y-1">
-            <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
+          <div className="min-w-0 space-y-1">
+            <CardTitle className="text-xl leading-tight font-bold tracking-tight text-balance text-foreground sm:text-2xl">
               Panel de Administración
             </CardTitle>
-            <CardDescription className="text-sm text-muted-foreground">
+            <CardDescription className="text-sm leading-relaxed text-pretty text-muted-foreground">
               Ingresa tus credenciales para acceder
             </CardDescription>
           </div>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="min-w-0">
           {demoMode && (
-            <Alert className="mb-4 border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-100">
-              <Info className="h-4 w-4" />
-              <AlertDescription>
+            <Alert className="mb-4 min-w-0 border-blue-200 bg-blue-50 text-sm leading-relaxed break-words text-blue-900 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-100">
+              <Info className="h-4 w-4 shrink-0" />
+              <AlertDescription className="min-w-0 break-words">
                 Estás en <strong>modo demo</strong> (sin base de datos). El acceso usa el flujo real de
-                autenticación (<span className="font-mono text-xs">/api/auth/login</span>).
+                autenticación (<span className="font-mono text-xs break-all">/api/auth/login</span>).
                 Ingresá con las credenciales demo de abajo.
               </AlertDescription>
             </Alert>
           )}
 
           {sessionExpired && (
-            <Alert className="mb-4 border-orange-200 bg-orange-50 text-orange-800">
-              <AlertDescription>
+            <Alert className="mb-4 min-w-0 border-orange-200 bg-orange-50 text-sm leading-relaxed break-words text-orange-800">
+              <AlertDescription className="break-words">
                 Tu sesión ha expirado (20 minutos de inactividad). Por favor, inicia sesión nuevamente.
               </AlertDescription>
             </Alert>
           )}
 
           {networkError && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertDescription>
+            <Alert variant="destructive" className="mb-4 min-w-0 text-sm leading-relaxed break-words">
+              <AlertDescription className="break-words">
                 Error de conexión. Por favor, verifica tu conexión a internet e intenta nuevamente.
               </AlertDescription>
             </Alert>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="min-w-0 space-y-4">
             {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
+              <Alert variant="destructive" className="min-w-0">
+                <AlertDescription className="text-sm leading-relaxed break-words">{error}</AlertDescription>
               </Alert>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+            <div className="min-w-0 space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -126,11 +126,12 @@ function LoginForm() {
                 required
                 disabled={isLoading}
                 autoComplete="email"
+                className="h-11 w-full min-w-0 text-base sm:text-sm"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
+            <div className="min-w-0 space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium">Contraseña</Label>
               <Input
                 id="password"
                 type="password"
@@ -140,12 +141,13 @@ function LoginForm() {
                 required
                 disabled={isLoading}
                 autoComplete="current-password"
+                className="h-11 w-full min-w-0 text-base sm:text-sm"
               />
             </div>
 
             <Button
               type="submit"
-              className="w-full"
+              className="h-11 w-full text-base sm:text-sm"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -162,16 +164,17 @@ function LoginForm() {
             </Button>
           </form>
 
-          <div className="mt-6 rounded-lg border bg-muted/60 p-3 text-center">
+          <div className="mt-6 min-w-0 rounded-lg border bg-muted/60 p-3 text-center">
             <p className="text-xs font-semibold text-foreground">Credenciales demo</p>
-            <div className="mt-1.5 space-y-0.5 font-mono text-xs text-muted-foreground">
-              <div>{DEMO_ADMIN.email} / {DEMO_ADMIN.password}</div>
+            <div className="mt-1.5 min-w-0 space-y-1 font-mono text-[11px] leading-relaxed break-words text-muted-foreground sm:text-xs">
+              <p className="min-w-0 break-all">{DEMO_ADMIN.email}</p>
+              <p className="min-w-0 break-all">{DEMO_ADMIN.password}</p>
             </div>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="mt-2.5 h-8 text-xs"
+              className="mt-2.5 h-9 w-full text-xs sm:h-8"
               onClick={fillDemoCredentials}
               disabled={isLoading}
             >
@@ -188,13 +191,13 @@ function LoginForm() {
 export default function AdminLoginPage() {
   return (
     <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4 sm:p-6">
-        <Card className="w-full max-w-sm border-border shadow-md sm:max-w-md">
+      <div className="flex min-h-[100dvh] items-center justify-center overflow-x-clip bg-muted/40 px-4 py-8">
+        <Card className="mx-auto w-full max-w-sm min-w-0 border-border shadow-md">
           <CardHeader className="space-y-3 text-center">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/20">
-              <GraduationCap className="h-7 w-7 text-primary" />
+              <GraduationCap className="h-7 w-7 shrink-0 text-primary" />
             </div>
-            <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
+            <CardTitle className="text-xl leading-tight font-bold tracking-tight text-foreground sm:text-2xl">
               Cargando...
             </CardTitle>
           </CardHeader>

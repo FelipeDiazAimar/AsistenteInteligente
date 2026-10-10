@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useTheme } from 'next-themes';
 import { Switch } from '@/components/ui/switch';
 import { Moon, Sun } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 function ThemeToggleButtonComponent() {
   const { setTheme, theme, resolvedTheme } = useTheme();
@@ -48,3 +49,40 @@ function ThemeToggleButtonComponent() {
 }
 
 export const ThemeToggleButton = React.memo(ThemeToggleButtonComponent);
+
+// Versión compacta circular para el sidebar colapsado.
+function ThemeToggleIconComponent() {
+  const { setTheme, theme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div className="h-10 w-10 shrink-0 rounded-full bg-input/50" aria-hidden="true" />;
+  }
+
+  const currentEffectiveTheme = theme === 'system' ? resolvedTheme : theme;
+  const isDarkMode = currentEffectiveTheme === 'dark';
+
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      onClick={() => setTheme(isDarkMode ? 'light' : 'dark')}
+      aria-label={isDarkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+      title={isDarkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+      className="h-10 w-10 shrink-0 rounded-full touch-manipulation"
+    >
+      {isDarkMode ? (
+        <Sun className="h-5 w-5" aria-hidden="true" />
+      ) : (
+        <Moon className="h-5 w-5" aria-hidden="true" />
+      )}
+    </Button>
+  );
+}
+
+export const ThemeToggleIcon = React.memo(ThemeToggleIconComponent);

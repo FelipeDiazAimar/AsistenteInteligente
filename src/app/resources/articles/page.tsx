@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   ArrowLeft,
   BookOpen,
+  ChevronDown,
   Plus,
   Search,
   SearchX,
@@ -89,6 +90,7 @@ export default function ArticleResourcesPage() {
   const [mios, setMios] = useState<ArticuloMio[]>([]);
   const [cargado, setCargado] = useState(false);
   const [dialogAbierto, setDialogAbierto] = useState(false);
+  const [expandidas, setExpandidas] = useState<Record<string, boolean>>({});
 
   const [titulo, setTitulo] = useState("");
   const [descripcion, setDescripcion] = useState("");
@@ -163,8 +165,11 @@ export default function ArticleResourcesPage() {
     guardarArticulosMios(actualizados);
   };
 
+  const alternarExpandida = (id: string) =>
+    setExpandidas((prev) => ({ ...prev, [id]: !prev[id] }));
+
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto min-w-0 px-4 py-6 sm:py-8">
       <Button asChild variant="ghost" size="sm" className="mb-4">
         <Link href="/resources">
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -172,16 +177,16 @@ export default function ArticleResourcesPage() {
         </Link>
       </Button>
 
-      <h1 className="mb-4 text-center font-headline text-3xl font-bold text-primary">
+      <h1 className="mb-3 break-words px-1 text-center font-headline text-2xl font-bold leading-tight text-primary sm:text-3xl">
         Artículos y publicaciones
       </h1>
-      <p className="mb-6 text-center text-muted-foreground">
+      <p className="mx-auto mb-6 max-w-2xl break-words px-1 text-center text-sm leading-relaxed text-muted-foreground sm:text-base">
         Lecturas recomendadas para profundizar en atención primaria (contenido
         demo + tus aportes locales).
       </p>
 
-      <div className="mx-auto mb-6 flex max-w-2xl flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="relative flex-grow">
+      <div className="mx-auto mb-6 flex max-w-2xl flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative min-w-0 flex-grow">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
@@ -189,20 +194,20 @@ export default function ArticleResourcesPage() {
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar artículos por título, descripción o contenido…"
             aria-label="Buscar artículos"
-            className="pl-9"
+            className="h-11 pl-9 text-base"
           />
         </div>
         <Button
           type="button"
           onClick={() => setDialogAbierto(true)}
-          className="w-full sm:w-auto"
+          className="h-11 w-full shrink-0 sm:w-auto"
         >
           <Plus className="mr-2 h-4 w-4" />
           Agregar artículo
         </Button>
       </div>
 
-      <p className="mb-4 text-center text-sm text-muted-foreground" aria-live="polite">
+      <p className="mb-4 break-words px-2 text-center text-xs text-muted-foreground sm:text-sm" aria-live="polite">
         {cargado
           ? `Mostrando ${filtrados.length} de ${combinados.length} artículo${combinados.length === 1 ? "" : "s"} (${mios.length} mío${mios.length === 1 ? "" : "s"} + ${mocks.length} demo)`
           : "Cargando artículos…"}
@@ -218,7 +223,7 @@ export default function ArticleResourcesPage() {
       )}
 
       {!cargado ? (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[0, 1, 2].map((i) => (
             <Card key={i} className="animate-pulse">
               <CardContent className="h-40" />
@@ -251,18 +256,21 @@ export default function ArticleResourcesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filtrados.map((resource) => (
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filtrados.map((resource) => {
+            const expandida = !!expandidas[resource.id];
+            const tieneContenido = !!(resource.esMio && resource.contenido);
+            return (
             <Card
               key={resource.id}
-              className="flex h-full flex-col rounded-xl shadow-lg transition-all duration-300 hover:border-primary/50 hover:shadow-2xl"
+              className="flex h-full min-w-0 flex-col overflow-hidden rounded-xl shadow-lg transition-all duration-300 hover:border-primary/50 hover:shadow-2xl"
             >
-              <CardHeader className="flex flex-row items-start gap-4 p-4">
-                <span className="rounded-full bg-primary/10 p-2.5">
+              <CardHeader className="flex flex-row items-start gap-3 p-4 sm:gap-4">
+                <span className="shrink-0 rounded-full bg-primary/10 p-2.5">
                   <BookOpen className="h-6 w-6 text-primary" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <CardTitle className="font-headline text-lg font-semibold leading-snug">
+                  <CardTitle className="break-words font-headline text-base font-semibold leading-snug sm:text-lg">
                     {resource.titulo}
                   </CardTitle>
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -289,27 +297,45 @@ export default function ArticleResourcesPage() {
                 )}
               </CardHeader>
               <CardContent className="flex-grow space-y-2 p-4 pt-0">
-                <p className="line-clamp-3 text-sm text-muted-foreground">
+                <p className={`break-words leading-relaxed text-muted-foreground ${expandida ? "whitespace-pre-line text-sm sm:text-[15px]" : "line-clamp-3 text-sm sm:text-[15px]"}`}>
                   {resource.descripcion || "Sin descripción."}
                 </p>
-                {resource.esMio && resource.contenido && (
-                  <p className="line-clamp-4 whitespace-pre-line rounded-md bg-muted/60 p-2 text-xs text-foreground">
-                    {resource.contenido}
-                  </p>
+                {tieneContenido && (
+                  <div className={expandida ? "max-h-[45dvh] overflow-y-auto overscroll-contain rounded-md bg-muted/60 p-2.5" : "overflow-hidden rounded-md bg-muted/60 p-2.5"}>
+                    <p className={`break-words whitespace-pre-line leading-relaxed text-foreground ${expandida ? "text-sm sm:text-[15px]" : "line-clamp-4 text-sm sm:text-[15px]"}`}>
+                      {resource.contenido}
+                    </p>
+                  </div>
+                )}
+                {tieneContenido && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => alternarExpandida(resource.id)}
+                    aria-expanded={expandida}
+                    className="h-9 px-2"
+                  >
+                    {expandida ? "Leer menos" : "Leer más"}
+                    <ChevronDown
+                      className={`ml-1 h-4 w-4 transition-transform ${expandida ? "rotate-180" : ""}`}
+                    />
+                  </Button>
                 )}
               </CardContent>
               <CardFooter className="p-4 pt-0">
-                <Button type="button" variant="outline" className="w-full" disabled>
+                <Button type="button" variant="outline" className="w-full min-w-0 truncate" disabled>
                   {resource.esMio ? "Artículo local (mock)" : "Recurso de muestra"}
                 </Button>
               </CardFooter>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 
       <Dialog open={dialogAbierto} onOpenChange={(o) => (o ? setDialogAbierto(true) : cerrarDialog())}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90dvh] w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain rounded-xl p-4 sm:max-w-lg sm:p-6">
           <DialogHeader>
             <DialogTitle>Agregar artículo (mock local)</DialogTitle>
             <DialogDescription>
@@ -325,6 +351,7 @@ export default function ArticleResourcesPage() {
                 onChange={(e) => setTitulo(e.target.value)}
                 placeholder="Ej.: Dieta DASH en consultorio"
                 maxLength={120}
+                className="h-11 text-base"
               />
               {errorTitulo && <p className="text-sm text-destructive">{errorTitulo}</p>}
             </div>
@@ -335,8 +362,9 @@ export default function ArticleResourcesPage() {
                 value={descripcion}
                 onChange={(e) => setDescripcion(e.target.value)}
                 placeholder="Resumen corto del artículo…"
-                rows={2}
+                rows={3}
                 maxLength={300}
+                className="min-h-[88px] text-base leading-relaxed"
               />
             </div>
             <div className="grid gap-2">
@@ -348,14 +376,15 @@ export default function ArticleResourcesPage() {
                 placeholder="Pega aquí el texto, ideas clave o resumen del artículo…"
                 rows={6}
                 maxLength={4000}
+                className="min-h-[140px] text-base leading-relaxed"
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={cerrarDialog}>
+          <DialogFooter className="gap-2">
+            <Button type="button" variant="outline" onClick={cerrarDialog} className="h-11 w-full sm:w-auto">
               Cancelar
             </Button>
-            <Button type="button" onClick={handleGuardar}>
+            <Button type="button" onClick={handleGuardar} className="h-11 w-full sm:w-auto">
               Guardar artículo
             </Button>
           </DialogFooter>

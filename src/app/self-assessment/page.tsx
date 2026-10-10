@@ -256,13 +256,13 @@ export default function SelfAssessmentCatalogPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-6xl px-4 py-8">
-      <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="font-headline text-4xl font-bold tracking-tight text-primary md:text-5xl">
+    <div className="container mx-auto w-full max-w-6xl overflow-x-clip px-4 py-6 sm:py-8">
+      <header className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="font-headline break-words text-3xl font-bold tracking-tight text-primary sm:text-4xl md:text-5xl">
             Autoevaluaciones
           </h1>
-          <p className="mt-3 max-w-2xl text-lg text-muted-foreground">
+          <p className="mt-3 max-w-2xl break-words text-base text-muted-foreground sm:text-lg">
             Elige una evaluación para poner a prueba tus conocimientos.
             {hidratado && evaluaciones.length > 0
               ? ` Hay ${evaluaciones.length} disponible${evaluaciones.length === 1 ? "" : "s"}.`
@@ -278,12 +278,12 @@ export default function SelfAssessmentCatalogPage() {
           }}
         >
           <DialogTrigger asChild>
-            <Button type="button" className="w-full sm:w-auto">
+            <Button type="button" className="min-h-11 w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Crear evaluación
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogContent className="max-h-[85dvh] w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain p-4 sm:max-w-2xl sm:p-6">
             <DialogHeader>
               <DialogTitle>Crear evaluación</DialogTitle>
               <DialogDescription>
@@ -354,7 +354,7 @@ export default function SelfAssessmentCatalogPage() {
                 </div>
 
                 {preguntas.map((p, pi) => (
-                  <div key={pi} className="rounded-lg border p-4">
+                  <div key={pi} className="min-w-0 rounded-lg border p-3 sm:p-4">
                     <div className="mb-3 flex items-center justify-between gap-2">
                       <p className="text-sm font-semibold">
                         Pregunta {pi + 1}
@@ -384,7 +384,7 @@ export default function SelfAssessmentCatalogPage() {
 
                       <div className="grid gap-2">
                         {p.opciones.map((op, oi) => (
-                          <div key={oi} className="flex items-center gap-2">
+                          <div key={oi} className="flex min-w-0 items-center gap-2">
                             <input
                               type="radio"
                               name={`correcta-${pi}`}
@@ -402,6 +402,7 @@ export default function SelfAssessmentCatalogPage() {
                               }
                               placeholder={`Opción ${oi + 1} (marca la correcta)`}
                               aria-label={`Opción ${oi + 1} de la pregunta ${pi + 1}`}
+                              className="min-w-0 flex-1"
                             />
                             <Button
                               type="button"
@@ -410,6 +411,7 @@ export default function SelfAssessmentCatalogPage() {
                               onClick={() => quitarOpcion(pi, oi)}
                               disabled={p.opciones.length <= 2}
                               aria-label={`Quitar opción ${oi + 1}`}
+                              className="shrink-0"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -454,14 +456,14 @@ export default function SelfAssessmentCatalogPage() {
                 type="button"
                 variant="outline"
                 onClick={() => setAbierto(false)}
-                className="w-full sm:w-auto"
+                className="min-h-11 w-full sm:w-auto"
               >
                 Cancelar
               </Button>
               <Button
                 type="button"
                 onClick={guardar}
-                className="w-full sm:w-auto"
+                className="min-h-11 w-full sm:w-auto"
               >
                 Guardar evaluación
               </Button>
@@ -471,7 +473,7 @@ export default function SelfAssessmentCatalogPage() {
       </header>
 
       {!hidratado ? (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {[0, 1, 2].map((i) => (
             <Card key={i} className="animate-pulse">
               <CardHeader>
@@ -509,42 +511,50 @@ export default function SelfAssessmentCatalogPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {evaluaciones.map((a) => {
             const esMia = idsMias.has(a.id);
             const total = Array.isArray(a.preguntas) ? a.preguntas.length : 0;
             return (
-              <Card key={a.id} className="flex flex-col rounded-xl shadow-lg">
+              <Card key={a.id} className="flex min-w-0 flex-col rounded-xl shadow-lg">
                 <CardHeader className="pb-3">
                   <div className="mb-2 flex flex-wrap items-center gap-2">
-                    {a.tema && <Badge variant="secondary">{a.tema}</Badge>}
-                    {a.nivel && <Badge variant="outline">{a.nivel}</Badge>}
+                    {a.tema && (
+                      <Badge variant="secondary" className="max-w-full break-words">
+                        {a.tema}
+                      </Badge>
+                    )}
+                    {a.nivel && (
+                      <Badge variant="outline" className="max-w-full break-words">
+                        {a.nivel}
+                      </Badge>
+                    )}
                     {esMia && <Badge>Mía</Badge>}
                   </div>
-                  <CardTitle className="font-headline text-lg font-semibold leading-snug">
+                  <CardTitle className="font-headline break-words text-lg font-semibold leading-snug">
                     {a.titulo}
                   </CardTitle>
                   {a.descripcion && (
-                    <CardDescription className="line-clamp-2">
+                    <CardDescription className="break-words line-clamp-2">
                       {a.descripcion}
                     </CardDescription>
                   )}
                 </CardHeader>
                 <CardContent className="flex flex-1 flex-col gap-2 text-sm text-muted-foreground">
-                  <p className="flex items-center gap-2">
+                  <p className="flex items-center gap-2 break-words">
                     <ListChecks className="h-4 w-4 shrink-0 text-primary" />
                     {total} pregunta{total === 1 ? "" : "s"}
                   </p>
-                  <p className="flex items-center gap-2">
+                  <p className="flex items-center gap-2 break-words">
                     <ClipboardList className="h-4 w-4 shrink-0 text-primary" />
                     Corrección con feedback inmediato
                   </p>
                 </CardContent>
                 <CardFooter className="flex gap-2">
-                  <Button asChild className="flex-1">
+                  <Button asChild className="min-h-11 min-w-0 flex-1">
                     <Link href={`/self-assessment/${a.id}`}>
-                      <BookOpenCheck className="mr-2 h-4 w-4" />
-                      Comenzar
+                      <BookOpenCheck className="mr-2 h-4 w-4 shrink-0" />
+                      <span className="truncate">Comenzar</span>
                     </Link>
                   </Button>
                   {esMia && (
@@ -555,6 +565,7 @@ export default function SelfAssessmentCatalogPage() {
                       onClick={() => eliminar(a.id)}
                       aria-label={`Eliminar ${a.titulo}`}
                       title="Eliminar mi evaluación"
+                      className="shrink-0"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -566,7 +577,7 @@ export default function SelfAssessmentCatalogPage() {
         </div>
       )}
 
-      <p className="mt-8 flex items-start justify-center gap-2 text-center text-xs text-muted-foreground">
+      <p className="mt-8 flex items-start justify-center gap-2 break-words text-center text-xs text-muted-foreground">
         <HelpCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
         <span>
           Contenido de demostración con fines educativos. Las evaluaciones

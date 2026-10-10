@@ -172,19 +172,19 @@ export default function ResourcesManagement() {
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center p-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <span className="ml-2">Cargando recursos...</span>
+      <Card className="w-full min-w-0 overflow-hidden">
+        <CardContent className="flex flex-col sm:flex-row items-center justify-center gap-2 p-4 sm:p-8 text-center">
+          <Loader2 className="h-8 w-8 shrink-0 animate-spin" />
+          <span>Cargando recursos...</span>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
+    <div className="w-full min-w-0 space-y-6">
+      <Card className="w-full min-w-0 overflow-hidden">
+        <CardHeader className="p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
               <BookOpen className="h-5 w-5" />
@@ -196,13 +196,13 @@ export default function ResourcesManagement() {
               </div>
             </div>
             {!demo && (
-              <Button variant="outline" size="sm" onClick={fetchResources} className="w-full sm:w-auto">
+              <Button variant="outline" size="sm" onClick={fetchResources} className="w-full sm:w-auto min-h-[44px]">
                 Actualizar
               </Button>
             )}
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="w-full min-w-0 p-4 sm:p-6 sm:pt-0 pt-0">
           {demo && (
             <Alert className="mb-4 border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-100">
               <Info className="h-4 w-4" />
@@ -227,13 +227,13 @@ export default function ResourcesManagement() {
             <div className="text-center py-8 sm:py-12">
               <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No hay recursos</h3>
-              <p className="text-muted-foreground text-sm sm:text-base">
+              <p className="text-muted-foreground text-sm sm:text-base break-words">
                 {demo
                   ? 'No hay recursos para mostrar.'
                   : 'Los profesores aún no han subido recursos al sistema.'}
               </p>
               {!demo && (
-                <Button variant="outline" size="sm" className="mt-4" onClick={fetchResources}>
+                <Button variant="outline" size="sm" className="mt-4 w-full min-h-[44px] min-[400px]:w-auto" onClick={fetchResources}>
                   Reintentar
                 </Button>
               )}
@@ -241,7 +241,7 @@ export default function ResourcesManagement() {
           ) : (
             <>
               {/* Desktop table with horizontal scroll */}
-              <div className="hidden md:block">
+              <div className="hidden w-full min-w-0 max-w-full overflow-x-auto md:block">
                 <ScrollArea className="w-full">
                   <div className="rounded-md border">
                     <Table>
@@ -309,53 +309,55 @@ export default function ResourcesManagement() {
               </div>
 
               {/* Mobile card layout */}
-              <div className="md:hidden space-y-4">
+              <div className="w-full min-w-0 space-y-4 md:hidden">
                 {resources.map((resource) => (
-                  <Card key={resource.id} className="p-4">
-                    <div className="space-y-3">
+                  <Card key={resource.id} className="w-full min-w-0 max-w-full overflow-hidden p-4 break-words">
+                    <div className="min-w-0 space-y-3">
                       {/* Header with type and actions */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {getTypeIcon(resource.type)}
-                          <Badge className={getTypeBadgeColor(resource.type)}>
+                      <div className="flex min-w-0 items-center justify-between gap-2">
+                        <div className="flex min-w-0 flex-1 items-center gap-2">
+                          <span className="shrink-0">{getTypeIcon(resource.type)}</span>
+                          <Badge className={`${getTypeBadgeColor(resource.type)} max-w-full truncate`}>
                             {resource.type.toUpperCase()}
                           </Badge>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(resource.id)}
-                          disabled={demo}
-                          title={demo ? 'No disponible por el momento' : 'Eliminar recurso'}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                          {new Date(resource.created_at).toLocaleDateString()}
+                        </span>
                       </div>
 
                       {/* Title */}
-                      <div>
-                        <h3 className="font-medium text-base line-clamp-2">{resource.title}</h3>
+                      <div className="min-w-0">
+                        <h3 className="font-medium text-base break-words line-clamp-2">{resource.title}</h3>
                       </div>
 
                       {/* Description */}
-                      <div>
-                        <p className="text-sm text-muted-foreground line-clamp-3">{resource.description}</p>
+                      <div className="min-w-0">
+                        <p className="text-sm text-muted-foreground break-words line-clamp-3">{resource.description}</p>
                       </div>
 
                       {/* File info */}
-                      <div className="space-y-1">
-                        <div className="text-sm font-medium line-clamp-1" title={resource.file_name || resource.title}>
+                      <div className="min-w-0 space-y-1">
+                        <div className="text-sm font-medium break-words line-clamp-1" title={resource.file_name || resource.title}>
                           {resource.file_name || resource.title}
                         </div>
-                        <div className="text-xs text-muted-foreground line-clamp-2" title={resource.ai_hint || 'Sin pista de IA'}>
+                        <div className="text-xs text-muted-foreground break-words line-clamp-2" title={resource.ai_hint || 'Sin pista de IA'}>
                           {resource.ai_hint || 'Sin pista de IA'}
                         </div>
                       </div>
 
-                      {/* Date */}
-                      <div className="text-xs text-muted-foreground">
-                        Creado: {new Date(resource.created_at).toLocaleDateString()}
-                      </div>
+                      {/* Full-width tactile delete */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(resource.id)}
+                        disabled={demo}
+                        title={demo ? 'No disponible por el momento' : 'Eliminar recurso'}
+                        className="w-full min-h-[44px]"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2 shrink-0" />
+                        Eliminar
+                      </Button>
                     </div>
                   </Card>
                 ))}

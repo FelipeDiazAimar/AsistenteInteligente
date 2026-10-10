@@ -47,6 +47,7 @@ interface RecursoVista {
   titulo: string;
   descripcion: string;
   contenido: string;
+  url?: string;
   esMio: boolean;
 }
 
@@ -105,12 +106,13 @@ export default function PdfResourcesPage() {
     return base
       .filter((r) => (r as { tipo?: unknown })?.tipo === TIPO)
       .map((r) => {
-        const rec = r as { id?: unknown; titulo?: unknown; descripcion?: unknown };
+        const rec = r as { id?: unknown; titulo?: unknown; descripcion?: unknown; url?: unknown };
         return {
           id: String(rec.id ?? crypto.randomUUID()),
           titulo: String(rec.titulo ?? "PDF sin título"),
           descripcion: String(rec.descripcion ?? ""),
           contenido: "",
+          url: typeof rec.url === "string" ? rec.url : undefined,
           esMio: false,
         };
       });
@@ -164,24 +166,24 @@ export default function PdfResourcesPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Button asChild variant="ghost" size="sm" className="mb-4">
+    <div className="container mx-auto w-full max-w-full overflow-x-hidden px-4 py-6 sm:py-8">
+      <Button asChild variant="ghost" size="sm" className="mb-4 max-w-full">
         <Link href="/resources">
-          <ArrowLeft className="mr-2 h-4 w-4" />
+          <ArrowLeft className="mr-2 h-4 w-4 shrink-0" />
           Volver a recursos
         </Link>
       </Button>
 
-      <h1 className="mb-4 text-center font-headline text-3xl font-bold text-primary">
+      <h1 className="mb-4 break-words px-2 text-center font-headline text-2xl font-bold text-primary sm:text-3xl">
         Documentos PDF
       </h1>
-      <p className="mb-6 text-center text-muted-foreground">
+      <p className="mx-auto mb-6 max-w-2xl break-words px-2 text-center text-sm text-muted-foreground sm:text-base">
         Guías, protocolos y manuales esenciales para tu práctica clínica
         (contenido demo + tus resúmenes locales).
       </p>
 
-      <div className="mx-auto mb-6 flex max-w-2xl flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="relative flex-grow">
+      <div className="mx-auto mb-4 flex w-full max-w-2xl flex-col items-stretch gap-2 sm:mb-6 sm:flex-row sm:items-center">
+        <div className="relative w-full flex-grow">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
@@ -189,7 +191,7 @@ export default function PdfResourcesPage() {
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar PDFs por título, descripción o contenido…"
             aria-label="Buscar PDFs"
-            className="pl-9"
+            className="w-full pl-9"
           />
         </div>
         <Button
@@ -202,7 +204,7 @@ export default function PdfResourcesPage() {
         </Button>
       </div>
 
-      <p className="mb-4 text-center text-sm text-muted-foreground" aria-live="polite">
+      <p className="mb-4 break-words px-2 text-center text-xs text-muted-foreground sm:text-sm" aria-live="polite">
         {cargado
           ? `Mostrando ${filtrados.length} de ${combinados.length} documento${combinados.length === 1 ? "" : "s"} (${mios.length} mío${mios.length === 1 ? "" : "s"} + ${mocks.length} demo)`
           : "Cargando documentos…"}
@@ -210,15 +212,15 @@ export default function PdfResourcesPage() {
       </p>
 
       {busqueda.trim() && (
-        <div className="mb-6 flex justify-center">
-          <Button type="button" variant="outline" size="sm" onClick={() => setBusqueda("")}>
+        <div className="mb-6 flex justify-center px-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => setBusqueda("")} className="w-full sm:w-auto">
             Limpiar búsqueda
           </Button>
         </div>
       )}
 
       {!cargado ? (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid w-full grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[0, 1, 2].map((i) => (
             <Card key={i} className="animate-pulse">
               <CardContent className="h-40" />
@@ -226,24 +228,24 @@ export default function PdfResourcesPage() {
           ))}
         </div>
       ) : filtrados.length === 0 ? (
-        <Card className="mx-auto max-w-xl bg-muted/50">
-          <CardContent className="flex flex-col items-center gap-3 px-6 py-10 text-center">
+        <Card className="mx-auto w-full max-w-xl overflow-hidden">
+          <CardContent className="flex flex-col items-center gap-3 break-words px-4 py-10 text-center sm:px-6">
             <span className="rounded-full bg-primary/10 p-4">
               <SearchX className="h-8 w-8 text-primary" />
             </span>
-            <p className="text-lg font-semibold">Sin documentos para mostrar</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="break-words text-lg font-semibold">Sin documentos para mostrar</p>
+            <p className="break-words text-sm text-muted-foreground">
               {combinados.length === 0
                 ? "Aún no hay documentos. Agrega el primero con el botón “Agregar PDF”."
                 : `No se encontraron PDFs para “${busqueda.trim()}”. Prueba con otra búsqueda.`}
             </p>
-            <div className="flex flex-wrap justify-center gap-2">
+            <div className="flex w-full flex-col items-stretch justify-center gap-2 sm:flex-row sm:flex-wrap sm:items-center">
               {busqueda.trim() && (
-                <Button type="button" variant="outline" size="sm" onClick={() => setBusqueda("")}>
+                <Button type="button" variant="outline" size="sm" onClick={() => setBusqueda("")} className="w-full sm:w-auto">
                   Limpiar búsqueda
                 </Button>
               )}
-              <Button type="button" size="sm" onClick={() => setDialogAbierto(true)}>
+              <Button type="button" size="sm" onClick={() => setDialogAbierto(true)} className="w-full sm:w-auto">
                 <Plus className="mr-2 h-4 w-4" />
                 Agregar PDF
               </Button>
@@ -251,18 +253,18 @@ export default function PdfResourcesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid w-full grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filtrados.map((resource) => (
             <Card
               key={resource.id}
-              className="flex flex-col rounded-xl shadow-lg transition-all duration-300 hover:border-primary/50 hover:shadow-2xl"
+              className="flex min-w-0 max-w-full flex-col overflow-hidden rounded-xl shadow-lg transition-all duration-300 hover:border-primary/50 hover:shadow-2xl"
             >
-              <CardHeader className="flex flex-row items-start gap-4 p-4">
-                <span className="rounded-full bg-primary/10 p-2.5">
+              <CardHeader className="flex min-w-0 flex-row items-start gap-4 p-4">
+                <span className="shrink-0 rounded-full bg-primary/10 p-2.5">
                   <FileText className="h-6 w-6 text-primary" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <CardTitle className="font-headline text-lg font-semibold leading-snug">
+                  <CardTitle className="break-words font-headline text-lg font-semibold leading-snug">
                     {resource.titulo}
                   </CardTitle>
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -289,19 +291,27 @@ export default function PdfResourcesPage() {
                 )}
               </CardHeader>
               <CardContent className="flex-grow space-y-2 p-4 pt-0">
-                <p className="line-clamp-3 text-sm text-muted-foreground">
+                <p className="line-clamp-3 break-words text-sm text-muted-foreground">
                   {resource.descripcion || "Sin descripción."}
                 </p>
                 {resource.esMio && resource.contenido && (
-                  <p className="line-clamp-4 whitespace-pre-line rounded-md bg-muted/60 p-2 text-xs text-foreground">
+                  <p className="line-clamp-4 break-words whitespace-pre-line rounded-md bg-muted/60 p-2 text-xs text-foreground">
                     {resource.contenido}
                   </p>
                 )}
               </CardContent>
               <CardFooter className="p-4 pt-0">
-                <Button type="button" variant="outline" className="w-full" disabled>
-                  {resource.esMio ? "Resumen local (mock)" : "Recurso de muestra"}
-                </Button>
+                {resource.url && resource.url !== "#" ? (
+                  <Button type="button" variant="outline" className="w-full min-w-0 break-words" asChild>
+                    <a href={resource.url} target="_blank" rel="noopener noreferrer">
+                      Abrir PDF
+                    </a>
+                  </Button>
+                ) : (
+                  <Button type="button" variant="outline" className="w-full min-w-0 break-words" disabled>
+                    {resource.esMio ? "Resumen local (mock)" : "Recurso de muestra"}
+                  </Button>
+                )}
               </CardFooter>
             </Card>
           ))}
@@ -309,15 +319,15 @@ export default function PdfResourcesPage() {
       )}
 
       <Dialog open={dialogAbierto} onOpenChange={(o) => (o ? setDialogAbierto(true) : cerrarDialog())}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] w-full max-w-[calc(100vw-2rem)] overflow-y-auto p-4 sm:max-w-lg sm:p-6">
           <DialogHeader>
-            <DialogTitle>Agregar PDF (mock local)</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="break-words text-lg sm:text-xl">Agregar PDF (mock local)</DialogTitle>
+            <DialogDescription className="break-words text-sm">
               Se guarda solo en tu navegador (localStorage). Ideal para guardar un resumen o apunte asociado.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-2">
-            <div className="grid gap-2">
+          <div className="grid w-full gap-4 py-2">
+            <div className="grid w-full gap-2">
               <Label htmlFor="pdf-titulo">Título *</Label>
               <Input
                 id="pdf-titulo"
@@ -325,10 +335,11 @@ export default function PdfResourcesPage() {
                 onChange={(e) => setTitulo(e.target.value)}
                 placeholder="Ej.: Guía HTA - Resumen de bolsillo"
                 maxLength={120}
+                className="w-full"
               />
-              {errorTitulo && <p className="text-sm text-destructive">{errorTitulo}</p>}
+              {errorTitulo && <p className="break-words text-sm text-destructive">{errorTitulo}</p>}
             </div>
-            <div className="grid gap-2">
+            <div className="grid w-full gap-2">
               <Label htmlFor="pdf-descripcion">Descripción</Label>
               <Textarea
                 id="pdf-descripcion"
@@ -337,9 +348,10 @@ export default function PdfResourcesPage() {
                 placeholder="¿Qué contiene este documento?"
                 rows={2}
                 maxLength={300}
+                className="w-full"
               />
             </div>
-            <div className="grid gap-2">
+            <div className="grid w-full gap-2">
               <Label htmlFor="pdf-contenido">Contenido / resumen</Label>
               <Textarea
                 id="pdf-contenido"
@@ -348,17 +360,18 @@ export default function PdfResourcesPage() {
                 placeholder="Pega aquí un resumen, índice o notas clave del PDF…"
                 rows={5}
                 maxLength={2000}
+                className="w-full"
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="break-words text-xs text-muted-foreground">
                 Mock local: no sube archivos, solo guarda texto en tu navegador.
               </p>
             </div>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={cerrarDialog}>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="outline" onClick={cerrarDialog} className="w-full sm:w-auto">
               Cancelar
             </Button>
-            <Button type="button" onClick={handleGuardar}>
+            <Button type="button" onClick={handleGuardar} className="w-full sm:w-auto">
               Guardar PDF
             </Button>
           </DialogFooter>

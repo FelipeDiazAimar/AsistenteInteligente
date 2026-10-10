@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from './header';
 import { Footer } from './footer';
+import { ThemeToggleButton, ThemeToggleIcon } from '@/components/theme-toggle-button';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -52,7 +53,7 @@ const sidebarNavItems: NavItem[] = [
 // Memoized component for the page content area
 const PageContent = React.memo(({ children }: { children: React.ReactNode }) => {
   return (
-    <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-background">
+    <main className="flex-1 w-full max-w-full min-w-0 overflow-x-clip overflow-y-auto p-4 md:p-6 lg:p-8 bg-background">
       {children}
     </main>
   );
@@ -67,8 +68,12 @@ function MainLayoutInternal({ children }: { children: ReactNode }) {
   const [isPinned, setIsPinned] = React.useState(true);
   const [isEdgeHoveredForUnpinned, setIsEdgeHoveredForUnpinned] = React.useState(false);
 
+  // isMobile es null durante la hidratación: no suponer escritorio ni móvil.
+  const esEscritorio = isMobile === false;
+  const esMovil = isMobile === true;
+
   let currentCollapsibleMode: "icon" | "offcanvas";
-  if (isMobile) {
+  if (esMovil || isMobile === null) {
     currentCollapsibleMode = "offcanvas";
   } else if (isPinned) {
     currentCollapsibleMode = "icon";
@@ -79,10 +84,10 @@ function MainLayoutInternal({ children }: { children: ReactNode }) {
   React.useEffect(() => {
     // If sidebar is shown temporarily due to edge hover (when unpinned),
     // ensure it's in icon-only mode (not expanded with text).
-    if (!isMobile && !isPinned && isEdgeHoveredForUnpinned) {
+    if (esEscritorio && !isPinned && isEdgeHoveredForUnpinned) {
       setOpen(false);
     }
-  }, [isMobile, isPinned, isEdgeHoveredForUnpinned, setOpen]);
+  }, [esEscritorio, isPinned, isEdgeHoveredForUnpinned, setOpen]);
 
   const handleTogglePin = () => {
     const newPinnedState = !isPinned;
@@ -94,7 +99,7 @@ function MainLayoutInternal({ children }: { children: ReactNode }) {
   };
 
   const handleSidebarMouseEnter = () => {
-    if (isMobile) return;
+    if (!esEscritorio) return;
     if (isPinned) {
       setOpen(true); // Expand text if pinned
     } else {
@@ -106,7 +111,7 @@ function MainLayoutInternal({ children }: { children: ReactNode }) {
   };
 
   const handleSidebarMouseLeave = () => {
-    if (isMobile) return;
+    if (!esEscritorio) return;
     if (isPinned) {
       setOpen(false); // Collapse to icons if pinned
     } else {
@@ -123,9 +128,10 @@ function MainLayoutInternal({ children }: { children: ReactNode }) {
 
   return (
     <>
-      {/* Edge Hover Detector (only for desktop & unpinned state) */}
-      {!isMobile && !isPinned && (
+      {/* Edge Hover Detector (solo escritorio y estado no fijado) */}
+      {esEscritorio && !isPinned && (
         <div
+          aria-hidden="true"
           className="fixed inset-y-0 left-0 z-20 w-3 bg-transparent" // Small, transparent hover area
           onMouseEnter={() => setIsEdgeHoveredForUnpinned(true)}
           onMouseLeave={() => {
@@ -136,7 +142,9 @@ function MainLayoutInternal({ children }: { children: ReactNode }) {
         />
       )}
 
-      {!isMobile && (
+      {/* Sidebar oculta en móvil salvo drawer: solo se monta en escritorio.
+          En móvil la navegación vive en el drawer del Header (offcanvas con overlay). */}
+      {esEscritorio && (
         <Sidebar
           collapsible={currentCollapsibleMode}
           variant="sidebar"
@@ -149,7 +157,7 @@ function MainLayoutInternal({ children }: { children: ReactNode }) {
             "group-data-[state=expanded]:p-4 group-data-[state=expanded]:gap-2",
             "group-data-[state=collapsed]:p-2 group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:h-[56px]"
           )}>
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2">
               <HeartPulse
                 className={cn(
                   "text-sidebar-primary",
@@ -175,7 +183,8 @@ function MainLayoutInternal({ children }: { children: ReactNode }) {
                     className={cn(
                       (pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href) && (pathname.split('/').length === item.href.split('/').length || pathname.startsWith(item.href + '/'))))
                         ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/80"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                      "focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2"
                     )}
                   >
                     <Link href={item.href} prefetch={true}>
@@ -195,6 +204,7 @@ function MainLayoutInternal({ children }: { children: ReactNode }) {
                   onClick={handleTogglePin}
                   tooltip={isPinned ? "Desfijar Barra Lateral" : "Fijar Barra Lateral"}
                   aria-label={isPinned ? "Desfijar barra lateral" : "Fijar barra lateral"}
+                  className="rounded-full focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2"
                 >
                   {isPinned ? <PinOff className="h-5 w-5" /> : <Pin className="h-5 w-5" />}
                   <span className={cn(
@@ -208,18 +218,21 @@ function MainLayoutInternal({ children }: { children: ReactNode }) {
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarContent>
-          <SidebarFooter className={cn(
-            "transition-opacity duration-300",
-             "group-data-[state=collapsed]:opacity-0 group-data-[state=collapsed]:hidden",
-             "group-data-[state=expanded]:opacity-100 group-data-[state=expanded]:block",
-             "p-2"
-          )}>
-            <p className="text-xs text-muted-foreground text-center">© {new Date().getFullYear()} CAP</p>
+          <SidebarFooter className="p-2">
+            {/* Expandido: switch completo + copyright */}
+            <div className="hidden items-center justify-between gap-2 group-data-[state=expanded]:flex">
+              <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} CAP</p>
+              <ThemeToggleButton />
+            </div>
+            {/* Colapsado: solo ícono circular */}
+            <div className="hidden justify-center group-data-[state=collapsed]:flex">
+              <ThemeToggleIcon />
+            </div>
           </SidebarFooter>
         </Sidebar>
       )}
 
-      <SidebarInset className="flex-1 flex flex-col">
+      <SidebarInset className="flex-1 flex flex-col min-w-0 w-full max-w-full overflow-x-clip">
         <Header />
         <PageContent>{children}</PageContent>
         <Footer />
@@ -230,7 +243,7 @@ function MainLayoutInternal({ children }: { children: ReactNode }) {
 
 export function MainLayout({ children }: { children: ReactNode }) {
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider defaultOpen={false} className="w-full max-w-full overflow-x-clip">
       <MainLayoutInternal>{children}</MainLayoutInternal>
     </SidebarProvider>
   );

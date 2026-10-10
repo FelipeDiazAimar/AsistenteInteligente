@@ -91,7 +91,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen w-full max-w-full overflow-x-clip bg-background">
       {/* Header */}
       <div className="bg-card shadow border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -129,7 +129,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="max-w-7xl mx-auto w-full min-w-0 px-4 sm:px-6 lg:px-8 py-6 sm:py-8 overflow-x-clip">
         {demoPreview && (
           <Alert className="mb-6 border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-100">
             <Info className="h-4 w-4" />
@@ -141,39 +141,39 @@ export default function AdminDashboard() {
           </Alert>
         )}
 
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1">
-            <TabsTrigger value="overview" className="flex items-center gap-2 text-xs sm:text-sm">
-              <Database className="h-4 w-4" />
-              Resumen
+        <Tabs defaultValue="overview" className="w-full min-w-0 space-y-6">
+          <TabsList className="grid w-full min-w-0 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 h-auto gap-2 p-1">
+            <TabsTrigger value="overview" className="flex w-full min-w-0 min-h-[44px] items-center justify-center gap-2 px-2 text-xs sm:text-sm">
+              <Database className="h-4 w-4 shrink-0" />
+              <span className="truncate">Resumen</span>
             </TabsTrigger>
-            <TabsTrigger value="professors" className="flex items-center gap-2 text-xs sm:text-sm">
-              <Users className="h-4 w-4" />
-              Profesores
+            <TabsTrigger value="professors" className="flex w-full min-w-0 min-h-[44px] items-center justify-center gap-2 px-2 text-xs sm:text-sm">
+              <Users className="h-4 w-4 shrink-0" />
+              <span className="truncate">Profesores</span>
             </TabsTrigger>
-            <TabsTrigger value="resources" className="flex items-center gap-2 text-xs sm:text-sm">
-              <BookOpen className="h-4 w-4" />
-              Recursos
+            <TabsTrigger value="resources" className="flex w-full min-w-0 min-h-[44px] items-center justify-center gap-2 px-2 text-xs sm:text-sm">
+              <BookOpen className="h-4 w-4 shrink-0" />
+              <span className="truncate">Recursos</span>
             </TabsTrigger>
-            <TabsTrigger value="sessions" className="flex items-center gap-2 text-xs sm:text-sm">
-              <Activity className="h-4 w-4" />
-              Sesiones
+            <TabsTrigger value="sessions" className="flex w-full min-w-0 min-h-[44px] items-center justify-center gap-2 px-2 text-xs sm:text-sm">
+              <Activity className="h-4 w-4 shrink-0" />
+              <span className="truncate">Sesiones</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-6">
+          <TabsContent value="overview" className="w-full min-w-0 space-y-6 overflow-x-clip">
             <OverviewSection />
           </TabsContent>
 
-          <TabsContent value="professors" className="space-y-6">
+          <TabsContent value="professors" className="w-full min-w-0 space-y-6 overflow-x-clip">
             <ProfessorsManagement />
           </TabsContent>
 
-          <TabsContent value="resources" className="space-y-6">
+          <TabsContent value="resources" className="w-full min-w-0 space-y-6 overflow-x-clip">
             <ResourcesManagement />
           </TabsContent>
 
-          <TabsContent value="sessions" className="space-y-6">
+          <TabsContent value="sessions" className="w-full min-w-0 space-y-6 overflow-x-clip">
             <SessionsManagement />
           </TabsContent>
         </Tabs>
@@ -276,18 +276,18 @@ function OverviewSection() {
     ];
 
     return (
-      <div className="space-y-4">
-        <Card className="border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40">
+      <div className="w-full min-w-0 space-y-4">
+        <Card className="w-full min-w-0 overflow-hidden border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40">
           <CardContent className="pt-6">
-            <p className="text-sm text-blue-900 dark:text-blue-100">
+            <p className="text-sm break-words text-blue-900 dark:text-blue-100">
               Cifras calculadas con los datos locales disponibles (apuntes, recursos y
               autoevaluación). No se consultó ninguna API.
             </p>
           </CardContent>
         </Card>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid w-full min-w-0 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {demoCards.map((card) => (
-            <Card key={card.title}>
+            <Card key={card.title} className="w-full min-w-0 overflow-hidden">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
                 <card.icon className="h-4 w-4 text-muted-foreground" />
@@ -306,14 +306,14 @@ function OverviewSection() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="w-full min-w-0 space-y-4">
       {error && (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        <Card>
+      <div className="grid w-full min-w-0 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <Card className="w-full min-w-0 overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Profesores</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -326,10 +326,10 @@ function OverviewSection() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="w-full min-w-0 overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Recursos Totales</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
+            <BookOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{loadingStats ? '—' : stats.resources}</div>
@@ -339,10 +339,10 @@ function OverviewSection() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="w-full min-w-0 overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Sesiones Activas</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <Activity className="h-4 w-4 shrink-0 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{loadingStats ? '—' : stats.activeSessions}</div>
@@ -352,7 +352,7 @@ function OverviewSection() {
           </CardContent>
         </Card>
       </div>
-      <Card>
+      <Card className="w-full min-w-0 overflow-hidden">
         <CardHeader>
           <CardTitle className="text-sm font-medium">Acerca de estas cifras</CardTitle>
           <CardDescription>

@@ -151,19 +151,19 @@ export default function ApuntesPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <header className="mb-8 text-center">
-        <h1 className="font-headline text-4xl font-bold tracking-tight text-primary md:text-5xl">
+    <div className="container mx-auto min-w-0 px-4 py-6 sm:py-8">
+      <header className="mb-6 text-center sm:mb-8">
+        <h1 className="break-words px-1 font-headline text-3xl font-bold leading-tight tracking-tight text-primary sm:text-4xl md:text-5xl">
           Apuntes
         </h1>
-        <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+        <p className="mx-auto mt-3 max-w-2xl break-words px-1 text-sm leading-relaxed text-muted-foreground sm:mt-4 sm:text-lg">
           Catálogo de apuntes de demostración. Busca por título o contenido,
           expande cada tarjeta y agrega tus propios apuntes.
         </p>
       </header>
 
       <div className="mx-auto mb-6 flex max-w-2xl flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-grow">
+        <div className="relative min-w-0 flex-grow">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
@@ -171,17 +171,17 @@ export default function ApuntesPage() {
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar apuntes por título o contenido…"
             aria-label="Buscar apuntes"
-            className="pl-9"
+            className="h-11 pl-9 text-base"
           />
         </div>
         <Dialog open={dialogAbierto} onOpenChange={setDialogAbierto}>
           <DialogTrigger asChild>
-            <Button type="button" className="shrink-0">
+            <Button type="button" className="h-11 w-full shrink-0 sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Agregar apunte
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90dvh] w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain rounded-xl p-4 sm:max-w-lg sm:p-6">
             <DialogHeader>
               <DialogTitle>Agregar apunte</DialogTitle>
               <DialogDescription>
@@ -198,6 +198,7 @@ export default function ApuntesPage() {
                   onChange={(e) => setTituloNuevo(e.target.value)}
                   placeholder="Ej.: Signos de alarma en consulta"
                   maxLength={120}
+                  className="h-11 text-base"
                 />
               </div>
               <div className="grid gap-2">
@@ -208,14 +209,16 @@ export default function ApuntesPage() {
                   onChange={(e) => setContenidoNuevo(e.target.value)}
                   placeholder="Escribe el contenido del apunte…"
                   rows={6}
+                  className="min-h-[140px] text-base leading-relaxed"
                 />
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="gap-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setDialogAbierto(false)}
+                className="h-11 w-full sm:w-auto"
               >
                 Cancelar
               </Button>
@@ -223,6 +226,7 @@ export default function ApuntesPage() {
                 type="button"
                 onClick={guardarApunte}
                 disabled={!formularioValido}
+                className="h-11 w-full sm:w-auto"
               >
                 Guardar apunte
               </Button>
@@ -232,7 +236,7 @@ export default function ApuntesPage() {
       </div>
 
       <p
-        className="mb-6 text-center text-sm text-muted-foreground"
+        className="mb-6 break-words px-2 text-center text-xs text-muted-foreground sm:text-sm"
         aria-live="polite"
       >
         Mostrando {filtradas.length} de {todas.length} apuntes
@@ -274,13 +278,13 @@ export default function ApuntesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filtradas.map((nota) => {
             const expandida = !!expandidas[nota.id];
             return (
               <Card
                 key={nota.id}
-                className="flex flex-col rounded-xl shadow-lg transition-all duration-300 hover:border-primary/50 hover:shadow-2xl"
+                className="flex min-w-0 flex-col overflow-hidden rounded-xl shadow-lg transition-all duration-300 hover:border-primary/50 hover:shadow-2xl"
               >
                 <CardHeader className="pb-2">
                   <div className="mb-2 flex flex-wrap gap-2">
@@ -289,28 +293,31 @@ export default function ApuntesPage() {
                       <Badge variant="secondary">Demo</Badge>
                     )}
                   </div>
-                  <CardTitle className="font-headline text-lg font-semibold leading-snug">
+                  <CardTitle className="break-words font-headline text-base font-semibold leading-snug sm:text-lg">
                     {nota.titulo}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex-grow pt-0">
-                  <p
-                    className={
-                      expandida
-                        ? "whitespace-pre-line text-sm text-muted-foreground"
-                        : "line-clamp-3 whitespace-pre-line text-sm text-muted-foreground"
-                    }
-                  >
-                    {nota.contenido}
-                  </p>
+                  <div className={expandida ? "max-h-[50dvh] overflow-y-auto overscroll-contain rounded-md pr-1" : "overflow-hidden"}>
+                    <p
+                      className={
+                        expandida
+                          ? "break-words whitespace-pre-line text-sm leading-relaxed text-muted-foreground sm:text-[15px]"
+                          : "line-clamp-3 break-words whitespace-pre-line text-sm leading-relaxed text-muted-foreground sm:text-[15px]"
+                      }
+                    >
+                      {nota.contenido}
+                    </p>
+                  </div>
                 </CardContent>
-                <CardFooter className="flex items-center justify-between gap-2 pt-0">
+                <CardFooter className="flex flex-wrap items-center justify-between gap-2 pt-0">
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => alternarExpandida(nota.id)}
                     aria-expanded={expandida}
+                    className="h-9"
                   >
                     {expandida ? "Leer menos" : "Leer más"}
                     <ChevronDown

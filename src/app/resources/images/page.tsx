@@ -190,7 +190,7 @@ export default function ImageResourcesPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto w-full min-w-0 max-w-7xl overflow-x-clip px-4 py-6 sm:py-8">
       <Button asChild variant="ghost" size="sm" className="mb-4">
         <Link href="/resources">
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -198,16 +198,16 @@ export default function ImageResourcesPage() {
         </Link>
       </Button>
 
-      <h1 className="mb-4 text-center font-headline text-3xl font-bold text-primary">
+      <h1 className="mb-3 break-words px-2 text-center font-headline text-2xl font-bold leading-tight text-primary sm:mb-4 sm:text-3xl">
         Imágenes médicas
       </h1>
-      <p className="mb-6 text-center text-muted-foreground">
+      <p className="mx-auto mb-6 max-w-2xl break-words px-2 text-center text-sm text-muted-foreground sm:text-base">
         Diagramas y material visual de apoyo para el estudio (contenido demo +
         tus aportes locales).
       </p>
 
-      <div className="mx-auto mb-6 flex max-w-2xl flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="relative flex-grow">
+      <div className="mx-auto mb-6 flex w-full max-w-2xl flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative w-full min-w-0 flex-grow">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
@@ -215,20 +215,20 @@ export default function ImageResourcesPage() {
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar imágenes por título, descripción o texto alternativo…"
             aria-label="Buscar imágenes"
-            className="pl-9"
+            className="w-full min-w-0 pl-9"
           />
         </div>
         <Button
           type="button"
           onClick={() => setDialogAbierto(true)}
-          className="w-full sm:w-auto"
+          className="w-full shrink-0 sm:w-auto"
         >
           <Plus className="mr-2 h-4 w-4" />
           Agregar imagen
         </Button>
       </div>
 
-      <p className="mb-4 text-center text-sm text-muted-foreground" aria-live="polite">
+      <p className="mb-4 break-words px-2 text-center text-sm text-muted-foreground" aria-live="polite">
         {cargado
           ? `Mostrando ${filtradas.length} de ${combinadas.length} imágenes (${mias.length} mía${mias.length === 1 ? "" : "s"} + ${mocks.length} demo)`
           : "Cargando imágenes…"}
@@ -244,16 +244,16 @@ export default function ImageResourcesPage() {
       )}
 
       {!cargado ? (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid w-full min-w-0 grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[0, 1, 2].map((i) => (
-            <Card key={i} className="animate-pulse">
+            <Card key={i} className="w-full min-w-0 animate-pulse">
               <CardContent className="h-48" />
             </Card>
           ))}
         </div>
       ) : filtradas.length === 0 ? (
-        <Card className="mx-auto max-w-xl bg-muted/50">
-          <CardContent className="flex flex-col items-center gap-3 px-6 py-10 text-center">
+        <Card className="mx-auto w-full min-w-0 max-w-xl bg-muted/50">
+          <CardContent className="flex flex-col items-center gap-3 px-4 py-10 text-center sm:px-6">
             <span className="rounded-full bg-primary/10 p-4">
               <SearchX className="h-8 w-8 text-primary" />
             </span>
@@ -277,13 +277,13 @@ export default function ImageResourcesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid w-full min-w-0 grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filtradas.map((resource) => {
             const mostrarImg = esUrlImagenValida(resource.url);
             return (
               <Card
                 key={resource.id}
-                className="flex h-full flex-col overflow-hidden rounded-xl shadow-lg transition-all duration-300 hover:border-primary/50 hover:shadow-2xl"
+                className="flex h-full w-full min-w-0 max-w-full flex-col overflow-hidden rounded-xl shadow-lg transition-all duration-300 hover:border-primary/50 hover:shadow-2xl"
               >
                 {mostrarImg ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -291,22 +291,23 @@ export default function ImageResourcesPage() {
                     src={resource.url}
                     alt={resource.alt}
                     loading="lazy"
-                    className="h-44 w-full object-cover"
+                    decoding="async"
+                    className="block aspect-video h-auto w-full max-w-full object-cover"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = "none";
                     }}
                   />
                 ) : (
-                  <div className="flex h-24 items-center justify-center bg-muted">
+                  <div className="flex aspect-video w-full max-w-full items-center justify-center bg-muted">
                     <ImageIcon className="h-8 w-8 text-muted-foreground" />
                   </div>
                 )}
-                <CardHeader className="flex flex-row items-start gap-4 p-4">
-                  <span className="rounded-full bg-primary/10 p-2.5">
+                <CardHeader className="flex w-full min-w-0 flex-row items-start gap-4 p-4">
+                  <span className="shrink-0 rounded-full bg-primary/10 p-2.5">
                     <ImageIcon className="h-6 w-6 text-primary" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <CardTitle className="font-headline text-lg font-semibold leading-snug">
+                    <CardTitle className="break-words font-headline text-base font-semibold leading-snug sm:text-lg">
                       {resource.titulo}
                     </CardTitle>
                     <div className="mt-2 flex flex-wrap gap-2">
@@ -332,17 +333,17 @@ export default function ImageResourcesPage() {
                     </Button>
                   )}
                 </CardHeader>
-                <CardContent className="flex-grow space-y-2 p-4 pt-0">
-                  <p className="line-clamp-3 text-sm text-muted-foreground">
+                <CardContent className="w-full min-w-0 flex-grow space-y-2 p-4 pt-0">
+                  <p className="line-clamp-3 break-words text-sm text-muted-foreground">
                     {resource.descripcion || "Sin descripción."}
                   </p>
                   {resource.esMia && (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="break-words text-xs text-muted-foreground">
                       <span className="font-medium">Texto alternativo:</span> {resource.alt}
                     </p>
                   )}
                 </CardContent>
-                <CardFooter className="p-4 pt-0">
+                <CardFooter className="w-full min-w-0 p-4 pt-0">
                   {mostrarImg ? (
                     <Button asChild className="w-full" variant="outline">
                       <a href={resource.url} target="_blank" rel="noopener noreferrer">
@@ -363,15 +364,15 @@ export default function ImageResourcesPage() {
       )}
 
       <Dialog open={dialogAbierto} onOpenChange={(o) => (o ? setDialogAbierto(true) : cerrarDialog())}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] max-w-lg overflow-y-auto rounded-lg p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle>Agregar imagen (mock local)</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="break-words pr-6 text-left">Agregar imagen (mock local)</DialogTitle>
+            <DialogDescription className="break-words text-left">
               Se guarda solo en tu navegador (localStorage). Incluye un texto alternativo para accesibilidad.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-2">
-            <div className="grid gap-2">
+          <div className="grid w-full min-w-0 gap-4 py-2">
+            <div className="grid w-full min-w-0 gap-2">
               <Label htmlFor="img-titulo">Título *</Label>
               <Input
                 id="img-titulo"
@@ -379,10 +380,11 @@ export default function ImageResourcesPage() {
                 onChange={(e) => setTitulo(e.target.value)}
                 placeholder="Ej.: Algoritmo de pesquisa DBT2"
                 maxLength={120}
+                className="w-full min-w-0"
               />
-              {errores.titulo && <p className="text-sm text-destructive">{errores.titulo}</p>}
+              {errores.titulo && <p className="break-words text-sm text-destructive">{errores.titulo}</p>}
             </div>
-            <div className="grid gap-2">
+            <div className="grid w-full min-w-0 gap-2">
               <Label htmlFor="img-descripcion">Descripción</Label>
               <Textarea
                 id="img-descripcion"
@@ -391,9 +393,10 @@ export default function ImageResourcesPage() {
                 placeholder="¿Qué muestra la imagen?"
                 rows={3}
                 maxLength={500}
+                className="w-full min-w-0"
               />
             </div>
-            <div className="grid gap-2">
+            <div className="grid w-full min-w-0 gap-2">
               <Label htmlFor="img-url">URL de la imagen *</Label>
               <Input
                 id="img-url"
@@ -402,16 +405,17 @@ export default function ImageResourcesPage() {
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://ejemplo.com/imagen.jpg"
                 inputMode="url"
+                className="w-full min-w-0"
               />
               {errores.url ? (
-                <p className="text-sm text-destructive">{errores.url}</p>
+                <p className="break-words text-sm text-destructive">{errores.url}</p>
               ) : (
-                <p className="text-xs text-muted-foreground">
+                <p className="break-words text-xs text-muted-foreground">
                   Debe empezar con http:// o https:// y apuntar a una imagen pública.
                 </p>
               )}
             </div>
-            <div className="grid gap-2">
+            <div className="grid w-full min-w-0 gap-2">
               <Label htmlFor="img-alt">Texto alternativo (alt)</Label>
               <Input
                 id="img-alt"
@@ -419,17 +423,18 @@ export default function ImageResourcesPage() {
                 onChange={(e) => setAlt(e.target.value)}
                 placeholder="Ej.: Flujograma de diagnóstico de diabetes tipo 2"
                 maxLength={150}
+                className="w-full min-w-0"
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="break-words text-xs text-muted-foreground">
                 Si lo dejas vacío se usará el título. Mejora la accesibilidad.
               </p>
             </div>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={cerrarDialog}>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:gap-0">
+            <Button type="button" variant="outline" onClick={cerrarDialog} className="w-full sm:w-auto">
               Cancelar
             </Button>
-            <Button type="button" onClick={handleGuardar}>
+            <Button type="button" onClick={handleGuardar} className="w-full sm:w-auto">
               Guardar imagen
             </Button>
           </DialogFooter>

@@ -203,7 +203,7 @@ export default function SelfAssessmentDetailPage() {
 
   if (cargando) {
     return (
-      <div className="container mx-auto max-w-3xl px-4 py-8">
+      <div className="container mx-auto w-full max-w-3xl overflow-x-clip px-4 py-6 sm:py-8">
         <Card className="bg-muted/50">
           <CardContent className="flex flex-col items-center gap-3 px-6 py-12 text-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -216,21 +216,21 @@ export default function SelfAssessmentDetailPage() {
 
   if (!evaluacion) {
     return (
-      <div className="container mx-auto max-w-3xl px-4 py-8">
-        <Card className="mx-auto max-w-xl bg-muted/50">
-          <CardContent className="flex flex-col items-center gap-3 px-6 py-10 text-center">
+      <div className="container mx-auto w-full max-w-3xl overflow-x-clip px-4 py-6 sm:py-8">
+        <Card className="mx-auto min-w-0 max-w-xl bg-muted/50">
+          <CardContent className="flex min-w-0 flex-col items-center gap-3 px-4 py-10 text-center sm:px-6">
             <span className="rounded-full bg-primary/10 p-4">
               <SearchX className="h-8 w-8 text-primary" />
             </span>
-            <p className="text-lg font-semibold">Evaluación no encontrada</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="break-words text-lg font-semibold">Evaluación no encontrada</p>
+            <p className="min-w-0 max-w-full break-words text-sm text-muted-foreground">
               No existe una evaluación con el identificador{" "}
-              <span className="font-mono font-medium text-foreground">
+              <span className="break-all font-mono font-medium text-foreground">
                 {idPedido || "(vacío)"}
               </span>
               . Revisa el catálogo y elige una disponible.
             </p>
-            <Button asChild className="mt-2 w-full sm:w-auto">
+            <Button asChild className="mt-2 min-h-11 w-full sm:w-auto">
               <Link href="/self-assessment">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Volver al catálogo
@@ -244,17 +244,17 @@ export default function SelfAssessmentDetailPage() {
 
   if (total === 0) {
     return (
-      <div className="container mx-auto max-w-3xl px-4 py-8">
-        <Card className="mx-auto max-w-xl bg-muted/50">
-          <CardContent className="flex flex-col items-center gap-3 px-6 py-10 text-center">
+      <div className="container mx-auto w-full max-w-3xl overflow-x-clip px-4 py-6 sm:py-8">
+        <Card className="mx-auto min-w-0 max-w-xl bg-muted/50">
+          <CardContent className="flex min-w-0 flex-col items-center gap-3 px-4 py-10 text-center sm:px-6">
             <span className="rounded-full bg-primary/10 p-4">
               <SearchX className="h-8 w-8 text-primary" />
             </span>
-            <p className="text-lg font-semibold">{evaluacion.titulo}</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="break-words text-lg font-semibold">{evaluacion.titulo}</p>
+            <p className="break-words text-sm text-muted-foreground">
               Esta evaluación todavía no tiene preguntas para mostrar.
             </p>
-            <Button asChild className="mt-2 w-full sm:w-auto">
+            <Button asChild className="mt-2 min-h-11 w-full sm:w-auto">
               <Link href="/self-assessment">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Volver al catálogo
@@ -267,9 +267,9 @@ export default function SelfAssessmentDetailPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-8">
-      <div className="mb-6">
-        <Button asChild variant="ghost" size="sm">
+    <div className="container mx-auto w-full max-w-3xl overflow-x-clip px-4 py-6 sm:py-8">
+      <div className="mb-4 sm:mb-6">
+        <Button asChild variant="ghost" size="sm" className="min-h-11">
           <Link href="/self-assessment">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Catálogo
@@ -277,60 +277,75 @@ export default function SelfAssessmentDetailPage() {
         </Button>
       </div>
 
-      <header className="mb-8 text-center">
-        <div className="mb-3 flex flex-wrap items-center justify-center gap-2">
-          {evaluacion.tema ? <Badge variant="secondary">{evaluacion.tema}</Badge> : null}
-          {evaluacion.nivel ? <Badge variant="outline">{evaluacion.nivel}</Badge> : null}
-          <Badge variant="outline">{total} preguntas</Badge>
+      <header className="mb-6 text-center sm:mb-8">
+        <div className="mb-3 flex max-w-full flex-wrap items-center justify-center gap-2">
+          {evaluacion.tema ? (
+            <Badge variant="secondary" className="max-w-full break-words">
+              {evaluacion.tema}
+            </Badge>
+          ) : null}
+          {evaluacion.nivel ? (
+            <Badge variant="outline" className="max-w-full break-words">
+              {evaluacion.nivel}
+            </Badge>
+          ) : null}
+          <Badge variant="outline" className="shrink-0">
+            {total} preguntas
+          </Badge>
         </div>
-        <h1 className="font-headline text-4xl font-bold tracking-tight text-primary md:text-5xl">
+        <h1 className="font-headline break-words text-2xl font-bold tracking-tight text-primary sm:text-4xl md:text-5xl">
           {evaluacion.titulo}
         </h1>
         {evaluacion.descripcion ? (
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+          <p className="mx-auto mt-3 max-w-2xl break-words text-base text-muted-foreground sm:mt-4 sm:text-lg">
             {evaluacion.descripcion}
           </p>
         ) : (
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+          <p className="mx-auto mt-3 max-w-2xl break-words text-base text-muted-foreground sm:mt-4 sm:text-lg">
             Responde las {total} preguntas y comprueba tu puntaje al final.
           </p>
         )}
       </header>
 
-      <div className="mb-6 flex items-center gap-3">
+      <div className="mb-6 flex min-w-0 items-center gap-3">
         <Progress
           value={total > 0 ? (respondidas / total) * 100 : 0}
           aria-label={`Progreso: ${respondidas} de ${total} respondidas`}
+          className="h-3 min-w-0 flex-1 sm:h-4"
         />
-        <span className="whitespace-nowrap text-sm text-muted-foreground">
+        <span className="shrink-0 whitespace-nowrap text-sm font-medium tabular-nums text-muted-foreground">
           {respondidas}/{total}
         </span>
       </div>
 
       {corregido && (
-        <Card className="mb-8 border-primary/40 shadow-lg">
-          <CardHeader className="flex flex-row items-center gap-4">
-            <span className="rounded-full bg-primary/10 p-3">
+        <Card className="mb-6 min-w-0 border-primary/40 shadow-lg sm:mb-8">
+          <CardHeader className="flex min-w-0 flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-4 sm:p-6">
+            <span className="w-fit shrink-0 rounded-full bg-primary/10 p-3">
               <Trophy className="h-8 w-8 text-primary" />
             </span>
-            <div>
-              <CardTitle className="font-headline text-2xl">
+            <div className="min-w-0 flex-1">
+              <CardTitle className="font-headline break-words text-xl sm:text-2xl">
                 Tu puntaje: {puntaje}/{total} ({porcentaje}%)
               </CardTitle>
-              <CardDescription className="mt-1 text-base">
+              <CardDescription className="mt-1 break-words text-sm sm:text-base">
                 {mensajePorPuntaje(porcentaje)}
               </CardDescription>
             </div>
           </CardHeader>
-          <CardContent>
-            <Progress value={porcentaje} aria-label={`Puntaje: ${porcentaje} por ciento`} />
+          <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+            <Progress
+              value={porcentaje}
+              aria-label={`Puntaje: ${porcentaje} por ciento`}
+              className="h-3 min-w-0 flex-1 sm:h-4"
+            />
           </CardContent>
-          <CardFooter className="flex flex-col gap-2 sm:flex-row">
-            <Button type="button" onClick={reintentar} className="w-full sm:w-auto">
+          <CardFooter className="flex flex-col gap-2 p-4 pt-0 sm:flex-row sm:p-6 sm:pt-0">
+            <Button type="button" onClick={reintentar} className="min-h-11 w-full sm:w-auto">
               <RotateCcw className="mr-2 h-4 w-4" />
               Reintentar
             </Button>
-            <Button asChild variant="outline" className="w-full sm:w-auto">
+            <Button asChild variant="outline" className="min-h-11 w-full sm:w-auto">
               <Link href="/self-assessment">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Volver al catálogo
@@ -340,7 +355,7 @@ export default function SelfAssessmentDetailPage() {
         </Card>
       )}
 
-      <div className="flex flex-col gap-6">
+      <div className="flex w-full min-w-0 flex-col gap-4 sm:gap-6">
         {preguntas.map((p, idx) => {
           const elegida = respuestas[p.id];
           const sinResponder = elegida === undefined;
@@ -351,7 +366,7 @@ export default function SelfAssessmentDetailPage() {
             <Card
               key={p.id}
               className={cn(
-                "rounded-xl shadow-lg transition-colors",
+                "min-w-0 rounded-xl shadow-lg transition-colors",
                 corregido &&
                   esCorrecta &&
                   "border-green-500/60 bg-green-50/50 dark:bg-green-950/20",
@@ -360,9 +375,9 @@ export default function SelfAssessmentDetailPage() {
                   "border-red-500/60 bg-red-50/50 dark:bg-red-950/20"
               )}
             >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-3">
-                  <CardTitle className="font-headline text-lg font-semibold leading-snug">
+              <CardHeader className="p-4 pb-3 sm:p-6 sm:pb-3">
+                <div className="flex min-w-0 items-start justify-between gap-2 sm:gap-3">
+                  <CardTitle className="font-headline min-w-0 flex-1 break-words text-base font-semibold leading-snug sm:text-lg">
                     <span className="mr-2 text-primary">{idx + 1}.</span>
                     {p.pregunta}
                   </CardTitle>
@@ -379,7 +394,7 @@ export default function SelfAssessmentDetailPage() {
                   )}
                 </div>
               </CardHeader>
-              <CardContent className="flex flex-col gap-2">
+              <CardContent className="flex min-w-0 flex-col gap-2 p-4 pt-0 sm:p-6 sm:pt-0">
                 {p.opciones.map((opcion, opcionIdx) => {
                   const esLaCorrecta = p.respuesta === opcionIdx;
                   const esLaElegida = elegida === opcionIdx;
@@ -391,7 +406,7 @@ export default function SelfAssessmentDetailPage() {
                       onClick={() => elegir(p.id, opcionIdx)}
                       aria-pressed={esLaElegida}
                       className={cn(
-                        "flex items-center justify-between gap-3 rounded-lg border px-4 py-3 text-left text-sm transition-all",
+                        "flex min-h-11 w-full min-w-0 items-center justify-between gap-2 whitespace-normal break-words rounded-lg border px-3 py-3 text-left text-sm transition-all sm:gap-3 sm:px-4",
                         !corregido &&
                           !esLaElegida &&
                           "border-border hover:border-primary/60 hover:bg-muted/60",
@@ -412,7 +427,7 @@ export default function SelfAssessmentDetailPage() {
                         corregido && "cursor-default"
                       )}
                     >
-                      <span>
+                      <span className="min-w-0 flex-1 break-words">
                         <span className="mr-2 font-semibold text-muted-foreground">
                           {String.fromCharCode(65 + opcionIdx)}.
                         </span>
@@ -431,7 +446,7 @@ export default function SelfAssessmentDetailPage() {
                 {corregido && (
                   <div
                     className={cn(
-                      "mt-2 flex items-start gap-2 rounded-lg px-3 py-2 text-sm",
+                      "mt-2 flex min-w-0 items-start gap-2 break-words rounded-lg px-3 py-2 text-sm",
                       esCorrecta
                         ? "bg-green-100 text-green-900 dark:bg-green-950/40 dark:text-green-100"
                         : "bg-red-100 text-red-900 dark:bg-red-950/40 dark:text-red-100"
@@ -471,12 +486,12 @@ export default function SelfAssessmentDetailPage() {
             size="lg"
             onClick={comprobar}
             disabled={faltantes > 0}
-            className="w-full sm:w-auto"
+            className="max-w-full whitespace-normal break-words w-full sm:w-auto"
           >
-            <ClipboardCheck className="mr-2 h-5 w-5" />
+            <ClipboardCheck className="mr-2 h-5 w-5 shrink-0" />
             Comprobar resultados
           </Button>
-          <p className="mt-3 text-sm text-muted-foreground" aria-live="polite">
+          <p className="mt-3 break-words text-sm text-muted-foreground" aria-live="polite">
             {faltantes > 0
               ? `Te faltan ${faltantes} pregunta${faltantes === 1 ? "" : "s"} por responder.`
               : "¡Listo! Ya puedes ver tu puntaje."}
@@ -489,12 +504,12 @@ export default function SelfAssessmentDetailPage() {
             size="lg"
             variant="outline"
             onClick={reintentar}
-            className="w-full sm:w-auto"
+            className="min-h-11 w-full sm:w-auto"
           >
             <RotateCcw className="mr-2 h-5 w-5" />
             Intentar de nuevo
           </Button>
-          <Button asChild size="lg" className="w-full sm:w-auto">
+          <Button asChild size="lg" className="min-h-11 w-full sm:w-auto">
             <Link href="/self-assessment">
               <ArrowLeft className="mr-2 h-5 w-5" />
               Volver al catálogo
@@ -503,7 +518,7 @@ export default function SelfAssessmentDetailPage() {
         </div>
       )}
 
-      <p className="mt-8 text-center text-xs text-muted-foreground">
+      <p className="mt-8 break-words text-center text-xs text-muted-foreground">
         Evaluación de demostración con fines educativos. No reemplaza el criterio
         médico profesional.
       </p>

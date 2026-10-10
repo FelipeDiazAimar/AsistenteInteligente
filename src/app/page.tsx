@@ -287,10 +287,10 @@ export default function HomePage() {
 
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 p-4 sm:gap-10 sm:p-6">
+    <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-col gap-8 overflow-x-clip p-4 sm:gap-10 sm:p-6">
       {/* Hero */}
-      <section aria-labelledby="titulo-inicio" className="mx-auto w-full max-w-3xl text-center">
-        <p className="inline-flex items-center gap-1.5 rounded-full border bg-muted/60 px-3 py-1 text-xs font-medium text-muted-foreground sm:text-sm">
+      <section aria-labelledby="titulo-inicio" className="mx-auto w-full min-w-0 max-w-3xl text-center">
+        <p className="inline-flex max-w-full items-center justify-center gap-1.5 rounded-full border bg-muted/60 px-3 py-1 text-center text-xs font-medium leading-snug text-muted-foreground sm:text-sm">
           <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" />
           Sin cuenta · Sin configuración · Acceso inmediato
         </p>
@@ -318,8 +318,8 @@ export default function HomePage() {
       </section>
 
       {/* Accesos directos */}
-      <nav aria-label="Secciones principales" className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-4">
-        <Link href="#asistente" className="group block rounded-xl focus-visible:outline-none">
+      <nav aria-label="Secciones principales" className="grid w-full min-w-0 max-w-full grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-4">
+        <Link href="#asistente" className="group block min-w-0 max-w-full rounded-xl focus-visible:outline-none">
           <Card className="flex h-full flex-col shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg group-hover:border-primary/50">
             <CardHeader className="pb-2">
               <div className="mb-3 w-fit rounded-full bg-primary/15 p-3">
@@ -337,7 +337,7 @@ export default function HomePage() {
           </Card>
         </Link>
 
-        <Link href="/resources/apuntes" className="group block rounded-xl focus-visible:outline-none">
+        <Link href="/resources/apuntes" className="group block min-w-0 max-w-full rounded-xl focus-visible:outline-none">
           <Card className="flex h-full flex-col shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg group-hover:border-primary/50">
             <CardHeader className="pb-2">
               <div className="mb-3 w-fit rounded-full bg-primary/15 p-3">
@@ -355,7 +355,7 @@ export default function HomePage() {
           </Card>
         </Link>
 
-        <Link href="/self-assessment" className="group block rounded-xl focus-visible:outline-none">
+        <Link href="/self-assessment" className="group block min-w-0 max-w-full rounded-xl focus-visible:outline-none">
           <Card className="flex h-full flex-col shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg group-hover:border-primary/50">
             <CardHeader className="pb-2">
               <div className="mb-3 w-fit rounded-full bg-primary/15 p-3">
@@ -373,7 +373,7 @@ export default function HomePage() {
           </Card>
         </Link>
 
-        <Link href="/resources" className="group block rounded-xl focus-visible:outline-none">
+        <Link href="/resources" className="group block min-w-0 max-w-full rounded-xl focus-visible:outline-none">
           <Card className="flex h-full flex-col shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg group-hover:border-primary/50">
             <CardHeader className="pb-2">
               <div className="mb-3 w-fit rounded-full bg-primary/15 p-3">
@@ -392,7 +392,7 @@ export default function HomePage() {
         </Link>
       </nav>
 
-      <section id="asistente" aria-labelledby="titulo-asistente" className="scroll-mt-24">
+      <section id="asistente" aria-labelledby="titulo-asistente" className="w-full min-w-0 max-w-full scroll-mt-24">
         <div className="mb-4 text-center sm:mb-6">
           <h2 id="titulo-asistente" className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
             Asistente y visor de apuntes
@@ -401,23 +401,23 @@ export default function HomePage() {
             Escribe tu pregunta abajo o carga un PDF para usarlo como contexto del chat.
           </p>
         </div>
-      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
+      <div className="grid w-full min-w-0 max-w-full grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
         {/* AI Chat Assistant Column */}
-        <Card className="flex flex-col shadow-lg rounded-xl h-[500px] sm:h-[600px] lg:h-[700px]">
-          <CardHeader className="flex-shrink-0 border-b">
+        <Card className="flex h-[82dvh] max-h-[700px] min-h-[480px] min-w-0 max-w-full flex-col overflow-hidden rounded-xl shadow-lg sm:h-[600px] lg:h-[700px]">
+          <CardHeader className="min-w-0 flex-shrink-0 border-b">
             <CardTitle className="flex items-center gap-2 font-headline text-lg sm:text-xl">
               <MessageCircle className="text-accent h-5 w-5 sm:h-6 sm:w-6" />
               Asistente de Chat IA
             </CardTitle>
             <CardDescription className="text-sm">Haz preguntas y obtén información instantánea sobre temas de atención primaria. Respuestas con fines educativos.</CardDescription>
-            <div className="mt-2 flex flex-wrap gap-2" aria-label="Preguntas sugeridas">
+            <div className="mt-3 flex min-w-0 flex-wrap justify-start gap-2" aria-label="Preguntas sugeridas">
               {SUGGESTED_QUESTIONS.map((q) => (
                 <Button
                   key={q}
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="text-xs"
+                  className="h-auto max-w-full whitespace-normal break-words py-2 text-left text-xs leading-snug sm:text-sm"
                   disabled={isLoadingChat}
                   onClick={() => handleSuggestedQuestion(q)}
                 >
@@ -425,28 +425,28 @@ export default function HomePage() {
                 </Button>
               ))}
             </div>
-             {pdfDataUri && selectedFile && (
-              <div className="mt-2 flex items-center gap-2 rounded-md border border-green-200 bg-green-100 p-2 text-xs text-green-800 sm:text-sm dark:border-green-800 dark:bg-green-950 dark:text-green-200">
+              {pdfDataUri && selectedFile && (
+              <div className="mt-2 flex min-w-0 items-center gap-2 rounded-md border border-green-200 bg-green-100 p-2 text-xs text-green-800 sm:text-sm dark:border-green-800 dark:bg-green-950 dark:text-green-200">
                 <FileCheck2 className="h-4 w-4 flex-shrink-0 sm:h-5 sm:w-5" aria-hidden="true" />
-                <span className="truncate">PDF: &ldquo;{selectedFile.name}&rdquo; cargado y se usará como contexto.</span>
+                <span className="min-w-0 flex-1 truncate">PDF: &ldquo;{selectedFile.name}&rdquo; cargado y se usará como contexto.</span>
               </div>
             )}
           </CardHeader>
-          <CardContent className="flex-grow flex flex-col p-0 overflow-hidden">
-            <ScrollArea className="flex-grow h-full p-3 sm:p-4 lg:p-6" ref={scrollAreaRef}>
-              <div className="space-y-3 sm:space-y-4 pb-4">{/* Agregar padding bottom */}
+          <CardContent className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-0">
+            <ScrollArea className="min-h-0 w-full max-w-full flex-1 p-3 sm:p-4 lg:p-6" ref={scrollAreaRef}>
+              <div className="min-w-0 space-y-3 pb-4 sm:space-y-4">{/* Agregar padding bottom */}
                 {messages.map((msg) => (
-                  <div key={msg.id} className={cn("flex items-start gap-2 sm:gap-3", msg.role === 'user' && "justify-end")}>
+                  <div key={msg.id} className={cn("flex w-full min-w-0 max-w-full items-start gap-2 sm:gap-3", msg.role === 'user' && "justify-end")}>
                     {msg.role === 'assistant' && (
                       <div className="p-1.5 sm:p-2 bg-primary/20 rounded-full flex-shrink-0">
                         <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                       </div>
                     )}
                     <div className={cn(
-                      "max-w-[85%] break-words rounded-lg p-2 shadow-sm sm:p-3",
+                      "min-w-0 max-w-[85%] break-words rounded-lg p-2.5 shadow-sm [overflow-wrap:anywhere] sm:max-w-[80%] sm:p-3",
                       msg.role === 'user' ? "bg-primary text-primary-foreground" : "border bg-muted text-foreground"
                     )}>
-                      <p className="text-xs sm:text-sm whitespace-pre-wrap">{msg.content}</p>
+                      <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{msg.content}</p>
                     </div>
                     {msg.role === 'user' && (
                       <div className="p-1.5 sm:p-2 bg-muted rounded-full flex-shrink-0">
@@ -456,27 +456,28 @@ export default function HomePage() {
                   </div>
                 ))}
                 {isLoadingChat && (
-                  <div className="flex items-start gap-2 sm:gap-3">
+                  <div className="flex w-full min-w-0 max-w-full items-start gap-2 sm:gap-3">
                     <div className="p-1.5 sm:p-2 bg-primary/20 rounded-full flex-shrink-0">
                       <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
-                    <div className="bg-muted max-w-[75%] rounded-lg border p-2 shadow-sm sm:p-3">
-                      <p className="text-xs sm:text-sm animate-pulse">Escribiendo...</p>
+                    <div className="bg-muted min-w-0 max-w-[85%] rounded-lg border p-2.5 shadow-sm sm:p-3">
+                      <p className="text-sm animate-pulse">Escribiendo...</p>
                     </div>
                   </div>
                 )}
               </div>
             </ScrollArea>
           </CardContent>
-          <CardFooter className="border-t p-3 sm:p-4 flex-shrink-0">
-            <div className="flex w-full flex-col gap-2">
+          <CardFooter className="sticky bottom-0 z-10 min-w-0 flex-shrink-0 border-t bg-card p-3 sm:p-4">
+            <div className="flex w-full min-w-0 flex-col gap-2">
               {chatError && (
-                <div className="flex items-center justify-between gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-2 text-xs sm:text-sm">
-                  <span className="text-destructive">{chatError}</span>
+                <div className="flex min-w-0 items-center justify-between gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-2 text-xs sm:text-sm">
+                  <span className="min-w-0 flex-1 break-words text-destructive">{chatError}</span>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
+                    className="flex-shrink-0"
                     disabled={isLoadingChat || !lastFailedQuestion}
                     onClick={handleRetry}
                   >
@@ -484,16 +485,16 @@ export default function HomePage() {
                   </Button>
                 </div>
               )}
-              <form onSubmit={handleSendMessage} className="flex w-full items-center gap-2">
+              <form onSubmit={handleSendMessage} className="flex w-full min-w-0 items-center gap-2">
               <Input 
                 type="text" 
                 placeholder="Escribe tu pregunta..." 
-                className="flex-grow text-sm"
+                className="min-w-0 flex-1 text-base"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 disabled={isLoadingChat} 
               />
-              <Button type="submit" variant="default" size="icon" aria-label="Enviar pregunta" disabled={isLoadingChat || !chatInput.trim()} className="h-9 w-9 sm:h-10 sm:w-10">
+              <Button type="submit" variant="default" size="icon" aria-label="Enviar pregunta" disabled={isLoadingChat || !chatInput.trim()} className="h-10 w-10 flex-shrink-0 sm:h-10 sm:w-10">
                 <Send className="h-4 w-4" />
               </Button>
             </form>
@@ -502,8 +503,8 @@ export default function HomePage() {
         </Card>
 
         {/* Resource Viewer and Actions Column */}
-        <div className="flex flex-col gap-4 sm:gap-6">
-          <Card className="shadow-lg rounded-xl">
+        <div className="flex min-w-0 max-w-full flex-col gap-4 sm:gap-6">
+          <Card className="min-w-0 max-w-full overflow-hidden shadow-lg rounded-xl">
             {!pdfVisualUrl && (
               <CardHeader>
                 <CardTitle className="font-headline text-lg sm:text-xl">Visor de Recursos</CardTitle>
@@ -517,12 +518,12 @@ export default function HomePage() {
               {pdfVisualUrl && selectedFile ? (
                 <iframe
                   src={pdfVisualUrl}
-                  className="w-full h-[300px] sm:h-[400px] lg:h-[500px] border-0"
+                  className="h-[300px] w-full max-w-full border-0 sm:h-[400px] lg:h-[500px]"
                   title={selectedFile.name}
                   aria-label={`Visor de PDF: ${selectedFile.name}`}
                 />
               ) : (
-                <div className="relative flex flex-col items-center justify-center h-[150px] sm:h-[200px] text-center">
+                <div className="relative flex h-[150px] min-w-0 flex-col items-center justify-center text-center sm:h-[200px]">
                   <FileSearch className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 text-muted-foreground mb-3 sm:mb-4" />
                   <p className="text-muted-foreground text-sm sm:text-base px-4">
                     Carga un apunte para verlo aquí o para usarlo como contexto en el chat.
@@ -532,14 +533,14 @@ export default function HomePage() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg rounded-xl">
+          <Card className="min-w-0 max-w-full overflow-hidden shadow-lg rounded-xl">
             {!pdfVisualUrl && (
               <CardHeader>
                 <CardTitle className="font-headline text-lg sm:text-xl">Carga</CardTitle>
               </CardHeader>
             )}
             <CardContent className={cn(
-              "flex flex-col",
+              "flex min-w-0 flex-col",
               pdfVisualUrl ? "p-3 sm:p-4" : "gap-3 sm:gap-4 p-4 sm:p-6 pt-0" 
             )}>
               <input
@@ -550,9 +551,9 @@ export default function HomePage() {
                 className="hidden"
                 aria-hidden="true"
               />
-              <Button variant="outline" size="lg" className="w-full text-sm sm:text-base" onClick={handleUploadClick}>
-                <Upload className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                <span className="truncate">
+              <Button variant="outline" size="lg" className="w-full min-w-0 max-w-full text-sm sm:text-base" onClick={handleUploadClick}>
+                <Upload className="mr-2 h-4 w-4 flex-shrink-0 sm:h-5 sm:w-5" />
+                <span className="min-w-0 flex-1 truncate text-center">
                   {(pdfVisualUrl || pdfDataUri) ? "Cargar Otro PDF" : "Subir Archivo PDF"}
                 </span>
               </Button>
@@ -568,9 +569,9 @@ export default function HomePage() {
                 </p>
               )}
               {(pdfVisualUrl || pdfDataUri) && selectedFile && (
-                <Button variant="destructive" size="sm" className="w-full mt-2 text-sm" onClick={clearPdfContext}>
-                  <XCircle className="mr-2 h-4 w-4" />
-                  <span className="truncate">Quitar PDF</span>
+                <Button variant="destructive" size="sm" className="mt-2 w-full min-w-0 max-w-full text-sm" onClick={clearPdfContext}>
+                  <XCircle className="mr-2 h-4 w-4 flex-shrink-0" />
+                  <span className="min-w-0 flex-1 truncate text-center">Quitar PDF</span>
                 </Button>
               )}
             </CardContent>

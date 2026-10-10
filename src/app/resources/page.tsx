@@ -276,22 +276,22 @@ export default function ResourcesOverviewPage() {
   const totalMios = mios.length;
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <header className="mb-10 text-center">
-        <h1 className="font-headline text-4xl font-bold tracking-tight text-primary md:text-5xl">
+    <div className="container mx-auto w-full max-w-full overflow-x-hidden px-4 py-6 sm:py-8">
+      <header className="mb-8 text-center sm:mb-10">
+        <h1 className="break-words font-headline text-2xl font-bold tracking-tight text-primary sm:text-4xl md:text-5xl">
           Recursos educativos
         </h1>
-        <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground md:text-xl">
+        <p className="mx-auto mt-4 max-w-2xl break-words text-base text-muted-foreground sm:text-lg md:text-xl">
           Material de apoyo para tu aprendizaje en atención primaria. Explora
           por categoría o filtra la lista demo por tipo.
         </p>
-        <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground" aria-live="polite">
+        <p className="mx-auto mt-2 max-w-xl break-words px-2 text-xs text-muted-foreground sm:text-sm" aria-live="polite">
           {recursos.length} recurso{recursos.length === 1 ? "" : "s"} en total
           ({recursosDemo.length} demo + {totalMios} mío{totalMios === 1 ? "" : "s"} en este navegador)
         </p>
       </header>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
         {resourceCategories.map((category) => {
           const Icon = category.icon;
           const esApuntes = category.tipo === "apunte";
@@ -309,21 +309,21 @@ export default function ResourcesOverviewPage() {
             <Link
               href={category.link}
               key={category.title}
-              className="group block rounded-xl border border-transparent bg-card transition-all duration-300 hover:border-primary/50 hover:shadow-2xl"
+              className="group block min-w-0 max-w-full overflow-hidden rounded-xl border border-transparent bg-card transition-all duration-300 hover:border-primary/50 hover:shadow-2xl"
             >
-              <Card className="flex h-full flex-col border-0 shadow-none">
+              <Card className="flex h-full min-w-0 max-w-full flex-col overflow-hidden border-0 shadow-none">
                 <CardHeader className="pb-3">
                   <div
                     className={`mb-4 w-fit rounded-full p-3 transition-colors duration-300 ${category.iconBgClass}`}
                   >
                     <Icon className={`h-8 w-8 ${category.iconTextClass}`} />
                   </div>
-                  <CardTitle className="font-headline text-2xl font-bold text-card-foreground transition-colors duration-300 group-hover:text-primary">
+                  <CardTitle className="break-words font-headline text-xl font-bold text-card-foreground transition-colors duration-300 group-hover:text-primary sm:text-2xl">
                     {category.title}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex-grow space-y-3">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="break-words text-sm text-muted-foreground">
                     {category.description}
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -337,8 +337,8 @@ export default function ResourcesOverviewPage() {
                     )}
                   </div>
                 </CardContent>
-                <CardFooter className="p-6 pt-2">
-                  <span className="flex items-center text-sm font-semibold text-primary">
+                <CardFooter className="p-4 pt-2 sm:p-6 sm:pt-2">
+                  <span className="flex min-w-0 flex-wrap items-center break-words text-sm font-semibold text-primary">
                     Explorar {category.title.toLowerCase()}
                     <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                   </span>
@@ -351,18 +351,18 @@ export default function ResourcesOverviewPage() {
 
       <section aria-label="Recursos disponibles en modo demo" className="mt-14">
         <div className="mb-6 text-center">
-          <h2 className="font-headline text-2xl font-bold text-primary md:text-3xl">
+          <h2 className="break-words px-2 font-headline text-xl font-bold text-primary sm:text-2xl md:text-3xl">
             Recursos disponibles (demo + míos)
           </h2>
-          <p className="mx-auto mt-2 max-w-xl text-muted-foreground">
+          <p className="mx-auto mt-2 max-w-xl break-words px-2 text-sm sm:text-base">
             Lista de demostración cargada desde el contrato demo, más tus
             aportes guardados en este navegador. Usa los filtros por tipo o
             busca por título.
           </p>
         </div>
 
-        <div className="mx-auto mb-6 flex max-w-xl flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="relative flex-grow">
+        <div className="mx-auto mb-4 flex w-full max-w-xl flex-col items-stretch gap-2 sm:mb-6 sm:flex-row sm:items-center">
+          <div className="relative w-full flex-grow">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
@@ -370,13 +370,13 @@ export default function ResourcesOverviewPage() {
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Buscar por título o descripción…"
               aria-label="Buscar recursos demo"
-              className="pl-9"
+              className="w-full pl-9"
             />
           </div>
         </div>
 
         <div
-          className="mb-6 flex flex-wrap justify-center gap-2"
+          className="mx-auto mb-6 flex w-full max-w-xl flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center"
           role="group"
           aria-label="Filtrar por tipo"
         >
@@ -388,7 +388,7 @@ export default function ResourcesOverviewPage() {
               size="sm"
               onClick={() => setTipo(f.value)}
               aria-pressed={tipo === f.value}
-              className="rounded-full"
+              className="w-full rounded-full sm:w-auto"
             >
               {f.label}
               {f.value !== "todos" && (
@@ -401,7 +401,7 @@ export default function ResourcesOverviewPage() {
         </div>
 
         <p
-          className="mb-4 text-center text-sm text-muted-foreground"
+          className="mb-4 break-words px-2 text-center text-xs text-muted-foreground sm:text-sm"
           aria-live="polite"
         >
           Mostrando {filtrados.length} de {recursos.length} recursos
@@ -447,21 +447,21 @@ export default function ResourcesOverviewPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid w-full grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filtrados.map((r) => {
               const Icon = ICONO_POR_TIPO[r.tipo] ?? BookOpen;
               const esDemo = !r.esMio && (!r.url || r.url === "#");
               return (
                 <Card
                   key={`${r.tipo}-${r.id}`}
-                  className="flex flex-col rounded-xl shadow-lg transition-all duration-300 hover:border-primary/50 hover:shadow-2xl"
+                  className="flex min-w-0 max-w-full flex-col overflow-hidden rounded-xl shadow-lg transition-all duration-300 hover:border-primary/50 hover:shadow-2xl"
                 >
-                  <CardHeader className="flex flex-row items-start gap-4 p-4 pb-2">
+                  <CardHeader className="flex min-w-0 flex-row items-start gap-4 p-4 pb-2">
                     <span className="rounded-full bg-primary/10 p-2.5">
                       <Icon className="h-6 w-6 text-primary" />
                     </span>
-                    <div className="min-w-0">
-                      <CardTitle className="font-headline text-lg font-semibold leading-snug">
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="break-words font-headline text-lg font-semibold leading-snug">
                         {r.titulo}
                       </CardTitle>
                       <div className="mt-2 flex flex-wrap gap-2">
@@ -479,11 +479,11 @@ export default function ResourcesOverviewPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="flex-grow p-4 pt-2">
-                    <p className="line-clamp-3 text-sm text-muted-foreground">
+                    <p className="line-clamp-3 break-words text-sm text-muted-foreground">
                       {r.descripcion}
                     </p>
                   </CardContent>
-                  <CardFooter className="flex gap-2 p-4 pt-0">
+                  <CardFooter className="flex min-w-0 flex-col items-stretch gap-2 p-4 pt-0 sm:flex-row sm:items-center">
                     {r.esMio ? (
                       <Button asChild variant="outline" className="w-full">
                         <Link href={RUTA_POR_TIPO[r.tipo] ?? "/resources"}>
@@ -508,7 +508,7 @@ export default function ResourcesOverviewPage() {
                       </Button>
                     )}
                     {RUTA_POR_TIPO[r.tipo] && !r.esMio && (
-                      <Button asChild variant="ghost" size="sm">
+                      <Button asChild variant="ghost" size="sm" className="w-full sm:w-auto">
                         <Link href={RUTA_POR_TIPO[r.tipo]} aria-label={`Ver más de tipo ${ETIQUETA_POR_TIPO[r.tipo] ?? r.tipo}`}>
                           Ver más
                         </Link>

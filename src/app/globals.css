@@ -145,6 +145,76 @@
   }
 }
 
+/* Responsive base anti-overflow (móvil 360px). No toca tokens del tema. */
+@layer base {
+  html,
+  body {
+    max-width: 100%;
+  }
+  body {
+    overflow-x: hidden;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  @supports (overflow: clip) {
+    body {
+      overflow-x: clip;
+    }
+  }
+  img,
+  video {
+    max-width: 100%;
+    height: auto;
+  }
+  iframe,
+  embed,
+  object {
+    max-width: 100%;
+  }
+  input,
+  textarea,
+  select {
+    max-width: 100%;
+  }
+  pre,
+  code,
+  kbd,
+  samp {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-wrap: break-word;
+  }
+  p,
+  li,
+  td,
+  th,
+  a[href] {
+    overflow-wrap: break-word;
+  }
+  /* URLs largas: permite corte sin romper layout; no afecta tokens. */
+  a[href] {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+  /* Tablas: NO envolver globalmente aquí (rompería sticky/ScrollArea).
+     Sugerencia por página: <div class="overflow-x-auto"> + <table class="w-full">,
+     con th/td min-w-[100px..] solo en desktop o con hidden md:block + cards en móvil. */
+  table {
+    max-width: 100%;
+  }
+  /* Tap-targets mínimos en táctil/móvil (44px). Solo altura mínima,
+     no cambia colores/tokens ni anchos en desktop. */
+  @media (pointer: coarse) {
+    button,
+    [role="button"],
+    input[type="button"],
+    input[type="submit"],
+    input[type="reset"] {
+      min-height: 44px;
+    }
+  }
+}
+
 /* Utility classes for text truncation */
 @layer utilities {
   .line-clamp-1 {
