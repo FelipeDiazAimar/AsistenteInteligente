@@ -1,18 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
   BookOpen,
   FileText,
   Image as ImageIcon,
+  NotebookPen,
   Search,
   SearchX,
   Video,
   type LucideIcon,
 } from "lucide-react";
-import { DEMO_RESOURCES } from "@/lib/demo";
+import { DEMO_NOTES, DEMO_RESOURCES } from "@/lib/demo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +30,7 @@ interface ResourceCategory {
   description: string;
   icon: LucideIcon;
   link: string;
+  tipo: "pdf" | "video" | "imagen" | "articulo" | "apunte";
   iconBgClass: string;
   iconTextClass: string;
 }
@@ -39,6 +41,7 @@ const resourceCategories: ResourceCategory[] = [
     description: "Guías, protocolos y documentos esenciales en formato PDF.",
     icon: FileText,
     link: "/resources/pdfs",
+    tipo: "pdf",
     iconBgClass: "bg-red-100 group-hover:bg-red-200",
     iconTextClass: "text-red-600 group-hover:text-red-700",
   },
@@ -47,6 +50,7 @@ const resourceCategories: ResourceCategory[] = [
     description: "Tutoriales, conferencias y demostraciones prácticas en video.",
     icon: Video,
     link: "/resources/videos",
+    tipo: "video",
     iconBgClass: "bg-blue-100 group-hover:bg-blue-200",
     iconTextClass: "text-blue-600 group-hover:text-blue-700",
   },
@@ -55,6 +59,7 @@ const resourceCategories: ResourceCategory[] = [
     description: "Atlas, diagramas e imágenes de apoyo para el estudio.",
     icon: ImageIcon,
     link: "/resources/images",
+    tipo: "imagen",
     iconBgClass: "bg-green-100 group-hover:bg-green-200",
     iconTextClass: "text-green-600 group-hover:text-green-700",
   },
@@ -63,8 +68,18 @@ const resourceCategories: ResourceCategory[] = [
     description: "Artículos y revisiones de interés en atención primaria.",
     icon: BookOpen,
     link: "/resources/articles",
+    tipo: "articulo",
     iconBgClass: "bg-yellow-100 group-hover:bg-yellow-200",
     iconTextClass: "text-yellow-600 group-hover:text-yellow-700",
+  },
+  {
+    title: "Apuntes",
+    description: "Apuntes de estudio en texto para repasar y agregar los tuyos.",
+    icon: NotebookPen,
+    link: "/resources/apuntes",
+    tipo: "apunte",
+    iconBgClass: "bg-purple-100 group-hover:bg-purple-200",
+    iconTextClass: "text-purple-600 group-hover:text-purple-700",
   },
 ];
 
@@ -99,14 +114,146 @@ const RUTA_POR_TIPO: Record<string, string> = {
   imagen: "/resources/images",
 };
 
+const CLAVES_POR_TIPO: Record<string, string> = {
+  pdf: "asistente-demo-pdfs-v1",
+  video: "asistente-demo-videos-v1",
+  articulo: "asistente-demo-articles-v1",
+  imagen: "asistente-demo-images-v1",
+};
+
+const APUNTES_STORAGE_KEY = "asistente-demo-notes-v1";
+
+function leerConteoApuntesMios(): number {
+  try {
+    if (typeof window === "undefined") return 0;
+    const crudo = window.localStorage.getItem(APUNTES_STORAGE_KEY);
+    if (!crudo) return 0;
+    const parsed: unknown = JSON.parse(crudo);
+    if (!Array.isArray(parsed)) return 0;
+    // Mismo criterio que src/app/resources/apuntes/page.tsx: título y contenido no vacíos.
+    return parsed.filter((item): item is Record<string, unknown> => {
+      if (typeof item !== "object" || item === null) return false;
+      const r = item as Record<string, unknown>;
+      return (
+        typeof r.titulo === "string" &&
+        (r.titulo as string).trim().length > 0 &&
+        typeof r.contenido === "string" &&
+        (r.contenido as string).trim().length > 0
+      );
+    }).length;
+  } catch {
+    return 0;
+  }
+}
+
+interface RecursoVista {
+  id: string;
+  tipo: string;
+  titulo: string;
+  descripcion: string;
+  url: string;
+  esMio: boolean;
+}
+
+function leerMiosPorTipo(tipo: string): RecursoVista[] {
+  try {
+    if (typeof window === "undefined") return [];
+    const clave = CLAVES_POR_TIPO[tipo];
+    if (!clave) return [];
+    const crudo = window.localStorage.getItem(clave);
+    if (!crudo) return [];
+    const parsed: unknown = JSON.parse(crudo);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((item): item is Record<string, unknown> => {
+        if (typeof item !== "object" || item === null) return false;
+        const r = item as Record<string, unknown>;
+        return (
+          typeof r.id === "string" &&
+          typeof r.titulo === "string" &&
+          (r.titulo as string).trim().length > 0
+        );
+      })
+      .map((r) => ({
+        id: String(r.id),
+        tipo,
+        titulo: String(r.titulo ?? "Recurso sin título"),
+        descripcion: typeof r.descripcion === "string" ? String(r.descripcion) : "",
+        url: typeof r.url === "string" ? String(r.url) : "#",
+        esMio: true,
+      }));
+  } catch {
+    return [];
+  }
+}
+
 export default function ResourcesOverviewPage() {
   const [tipo, setTipo] = useState<TipoFiltro>("todos");
   const [busqueda, setBusqueda] = useState("");
+  const [mios, setMios] = useState<RecursoVista[]>([]);
+  const [apuntesMios, setApuntesMios] = useState(0);
 
-  const recursos = useMemo(
-    () => (Array.isArray(DEMO_RESOURCES) ? DEMO_RESOURCES : []),
+  useEffect(() => {
+    const todos: RecursoVista[] = [
+      ...leerMiosPorTipo("pdf"),
+      ...leerMiosPorTipo("video"),
+      ...leerMiosPorTipo("articulo"),
+      ...leerMiosPorTipo("imagen"),
+    ];
+    setMios(todos);
+    setApuntesMios(leerConteoApuntesMios());
+  }, []);
+
+  const conteoDemoApuntes = useMemo(
+    () => (Array.isArray(DEMO_NOTES) ? DEMO_NOTES.length : 0),
     []
   );
+
+  const recursosDemo = useMemo<RecursoVista[]>(() => {
+    const base = Array.isArray(DEMO_RESOURCES) ? DEMO_RESOURCES : [];
+    return base
+      .filter((r) => {
+        const t = (r as { tipo?: unknown })?.tipo;
+        return (
+          t === "pdf" || t === "video" || t === "articulo" || t === "imagen"
+        );
+      })
+      .map((r) => {
+        const rec = r as {
+          id?: unknown;
+          tipo?: unknown;
+          titulo?: unknown;
+          descripcion?: unknown;
+          url?: unknown;
+        };
+        return {
+          id: String(rec.id ?? crypto.randomUUID()),
+          tipo: String(rec.tipo),
+          titulo: String(rec.titulo ?? "Recurso sin título"),
+          descripcion: String(rec.descripcion ?? ""),
+          url: typeof rec.url === "string" ? rec.url : "#",
+          esMio: false,
+        };
+      });
+  }, []);
+
+  const recursos = useMemo<RecursoVista[]>(() => [...mios, ...recursosDemo], [mios, recursosDemo]);
+
+  const conteoDemoPorTipo = useMemo(() => {
+    const acc: Record<string, number> = { pdf: 0, video: 0, articulo: 0, imagen: 0 };
+    for (const r of recursosDemo) {
+      if (r.tipo in acc) acc[r.tipo] += 1;
+    }
+    return acc;
+  }, [recursosDemo]);
+
+  const conteoMioPorTipo = useMemo(() => {
+    const acc: Record<string, number> = { pdf: 0, video: 0, articulo: 0, imagen: 0 };
+    for (const r of mios) {
+      if (r.tipo in acc) acc[r.tipo] += 1;
+    }
+    return acc;
+  }, [mios]);
 
   const filtrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -126,6 +273,8 @@ export default function ResourcesOverviewPage() {
     setBusqueda("");
   };
 
+  const totalMios = mios.length;
+
   return (
     <div className="container mx-auto px-4 py-8">
       <header className="mb-10 text-center">
@@ -136,11 +285,26 @@ export default function ResourcesOverviewPage() {
           Material de apoyo para tu aprendizaje en atención primaria. Explora
           por categoría o filtra la lista demo por tipo.
         </p>
+        <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground" aria-live="polite">
+          {recursos.length} recurso{recursos.length === 1 ? "" : "s"} en total
+          ({recursosDemo.length} demo + {totalMios} mío{totalMios === 1 ? "" : "s"} en este navegador)
+        </p>
       </header>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {resourceCategories.map((category) => {
           const Icon = category.icon;
+          const esApuntes = category.tipo === "apunte";
+          const demo = esApuntes
+            ? conteoDemoApuntes
+            : (conteoDemoPorTipo[category.tipo] ?? 0);
+          const mio = esApuntes
+            ? apuntesMios
+            : (conteoMioPorTipo[category.tipo] ?? 0);
+          const total = demo + mio;
+          const etiquetaTotal = esApuntes
+            ? `apunte${total === 1 ? "" : "s"}`
+            : `recurso${total === 1 ? "" : "s"}`;
           return (
             <Link
               href={category.link}
@@ -158,10 +322,20 @@ export default function ResourcesOverviewPage() {
                     {category.title}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="flex-grow">
+                <CardContent className="flex-grow space-y-3">
                   <p className="text-sm text-muted-foreground">
                     {category.description}
                   </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="secondary">
+                      {total} {etiquetaTotal}
+                    </Badge>
+                    {mio > 0 ? (
+                      <Badge variant="default">{mio} mío{mio === 1 ? "" : "s"}</Badge>
+                    ) : (
+                      <Badge variant="outline">{demo} demo</Badge>
+                    )}
+                  </div>
                 </CardContent>
                 <CardFooter className="p-6 pt-2">
                   <span className="flex items-center text-sm font-semibold text-primary">
@@ -178,11 +352,12 @@ export default function ResourcesOverviewPage() {
       <section aria-label="Recursos disponibles en modo demo" className="mt-14">
         <div className="mb-6 text-center">
           <h2 className="font-headline text-2xl font-bold text-primary md:text-3xl">
-            Recursos disponibles (demo)
+            Recursos disponibles (demo + míos)
           </h2>
           <p className="mx-auto mt-2 max-w-xl text-muted-foreground">
-            Lista de demostración cargada desde el contrato demo. Usa los
-            filtros por tipo o busca por título.
+            Lista de demostración cargada desde el contrato demo, más tus
+            aportes guardados en este navegador. Usa los filtros por tipo o
+            busca por título.
           </p>
         </div>
 
@@ -216,6 +391,11 @@ export default function ResourcesOverviewPage() {
               className="rounded-full"
             >
               {f.label}
+              {f.value !== "todos" && (
+                <span className="ml-1.5 text-xs opacity-80">
+                  {(conteoDemoPorTipo[f.value] ?? 0) + (conteoMioPorTipo[f.value] ?? 0)}
+                </span>
+              )}
             </Button>
           ))}
         </div>
@@ -227,6 +407,7 @@ export default function ResourcesOverviewPage() {
           Mostrando {filtrados.length} de {recursos.length} recursos
           {tipo !== "todos" ? ` · filtro: ${ETIQUETA_POR_TIPO[tipo]}` : ""}
           {busqueda.trim() ? ` · búsqueda: “${busqueda.trim()}”` : ""}
+          {totalMios > 0 ? ` · ${totalMios} mío${totalMios === 1 ? "" : "s"}` : ""}
         </p>
 
         {recursos.length === 0 ? (
@@ -269,10 +450,10 @@ export default function ResourcesOverviewPage() {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filtrados.map((r) => {
               const Icon = ICONO_POR_TIPO[r.tipo] ?? BookOpen;
-              const esDemo = !r.url || r.url === "#";
+              const esDemo = !r.esMio && (!r.url || r.url === "#");
               return (
                 <Card
-                  key={r.id}
+                  key={`${r.tipo}-${r.id}`}
                   className="flex flex-col rounded-xl shadow-lg transition-all duration-300 hover:border-primary/50 hover:shadow-2xl"
                 >
                   <CardHeader className="flex flex-row items-start gap-4 p-4 pb-2">
@@ -287,8 +468,12 @@ export default function ResourcesOverviewPage() {
                         <Badge variant="secondary">
                           {ETIQUETA_POR_TIPO[r.tipo] ?? r.tipo}
                         </Badge>
-                        {esDemo && (
-                          <Badge variant="outline">Contenido demo</Badge>
+                        {r.esMio ? (
+                          <Badge variant="default">Mío</Badge>
+                        ) : (
+                          esDemo && (
+                            <Badge variant="outline">Contenido demo</Badge>
+                          )
                         )}
                       </div>
                     </div>
@@ -299,7 +484,14 @@ export default function ResourcesOverviewPage() {
                     </p>
                   </CardContent>
                   <CardFooter className="flex gap-2 p-4 pt-0">
-                    {esDemo ? (
+                    {r.esMio ? (
+                      <Button asChild variant="outline" className="w-full">
+                        <Link href={RUTA_POR_TIPO[r.tipo] ?? "/resources"}>
+                          Gestionar en {ETIQUETA_POR_TIPO[r.tipo] ?? r.tipo}
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                      </Button>
+                    ) : esDemo ? (
                       <Button type="button" variant="outline" className="w-full" disabled>
                         Recurso de muestra
                       </Button>
@@ -315,7 +507,7 @@ export default function ResourcesOverviewPage() {
                         </a>
                       </Button>
                     )}
-                    {RUTA_POR_TIPO[r.tipo] && (
+                    {RUTA_POR_TIPO[r.tipo] && !r.esMio && (
                       <Button asChild variant="ghost" size="sm">
                         <Link href={RUTA_POR_TIPO[r.tipo]} aria-label={`Ver más de tipo ${ETIQUETA_POR_TIPO[r.tipo] ?? r.tipo}`}>
                           Ver más

@@ -88,7 +88,7 @@ export default function SessionsManagement() {
 
   const handleCloseSession = async (sessionId: string) => {
     if (demo) {
-      setError('El cierre de sesiones no está disponible en modo demo.');
+      setError('El cierre de sesiones no está disponible por el momento.');
       return;
     }
     if (!confirm('¿Estás seguro de que quieres cerrar esta sesión?')) return;
@@ -119,7 +119,7 @@ export default function SessionsManagement() {
 
   const handleCleanExpiredSessions = async () => {
     if (demo) {
-      setError('La limpieza de sesiones no está disponible en modo demo.');
+      setError('La limpieza de sesiones no está disponible por el momento.');
       return;
     }
     if (!confirm('¿Estás seguro de que quieres limpiar todas las sesiones expiradas?')) return;
@@ -204,8 +204,8 @@ export default function SessionsManagement() {
         <Alert className="border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-100">
           <Info className="h-4 w-4" />
           <AlertDescription>
-            Modo demo: el seguimiento de sesiones requiere base de datos y no está
-            disponible aquí. Se muestra un estado vacío.
+            El seguimiento de sesiones no está disponible por el momento. Se muestra
+            un estado vacío.
           </AlertDescription>
         </Alert>
       )}
@@ -260,7 +260,7 @@ export default function SessionsManagement() {
                 variant="outline"
                 size="sm"
                 disabled={cleaningUp || demo}
-                title={demo ? 'No disponible en modo demo' : undefined}
+                title={demo ? 'No disponible por el momento' : undefined}
                 className="w-full sm:w-auto"
               >
                 {cleaningUp ? (
@@ -270,7 +270,7 @@ export default function SessionsManagement() {
                 )}
                 Limpiar Expiradas
               </Button>
-              <Button onClick={fetchSessions} variant="outline" size="sm" disabled={demo} title={demo ? 'No disponible en modo demo' : undefined} className="w-full sm:w-auto">
+              <Button onClick={fetchSessions} variant="outline" size="sm" disabled={demo} title={demo ? 'No disponible por el momento' : undefined} className="w-full sm:w-auto">
                 Actualizar
               </Button>
             </div>
@@ -293,9 +293,7 @@ export default function SessionsManagement() {
               <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No hay sesiones activas</h3>
               <p className="text-muted-foreground text-sm sm:text-base">
-                {demo
-                  ? 'En modo demo no se registran sesiones.'
-                  : 'Ningún profesor está conectado en este momento.'}
+                Ningún profesor está conectado en este momento.
               </p>
             </div>
           ) : (

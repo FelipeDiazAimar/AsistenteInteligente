@@ -1,17 +1,35 @@
 "use client";
 
 import Link from 'next/link';
-import { Menu, ArrowLeft, Home, BookOpen, FileText, Video, Image as ImageIcon, ClipboardCheck, FilePlus2, HeartPulse } from 'lucide-react';
+import { Menu, ArrowLeft, Home, BookOpen, FileText, Video, Image as ImageIcon, ClipboardCheck, HeartPulse } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from '@/components/ui/sheet';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
+
+// Prefetch agresivo: todas las rutas del nav se precargan al entrar en viewport.
+// Sin fetch manual en hover (no bloquea la navegación; lo hace el router).
+const mobileNavItems = [
+  { href: '/', label: 'Inicio', icon: Home },
+  { href: '/resources/pdfs', label: 'PDFs', icon: FileText },
+  { href: '/resources/videos', label: 'Videos', icon: Video },
+  { href: '/resources/images', label: 'Imágenes', icon: ImageIcon },
+  { href: '/resources/articles', label: 'Artículos', icon: BookOpen },
+  { href: '/self-assessment', label: 'Autoevaluación', icon: ClipboardCheck },
+  { href: '/resources/apuntes', label: 'Apuntes', icon: FileText },
+];
+
+function isActivePath(pathname: string, href: string) {
+  return pathname === href || (href !== '/' && pathname.startsWith(href + '/'));
+}
 
 function HeaderComponent() {
   const { isMobile } = useSidebar();
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleGoBack = () => {
     router.back();
@@ -39,34 +57,27 @@ function HeaderComponent() {
                   </SheetTitle>                
                   </SheetHeader>
                 <nav className="flex flex-col gap-4 mt-6">
-                  <Link href="/" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
-                    <Home className="h-5 w-5" />
-                    <span className="font-medium">Inicio</span>
-                  </Link>
-                  <Link href="/resources/pdfs" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
-                    <FileText className="h-5 w-5" />
-                    <span className="font-medium">PDFs</span>
-                  </Link>
-                  <Link href="/resources/videos" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
-                    <Video className="h-5 w-5" />
-                    <span className="font-medium">Videos</span>
-                  </Link>
-                  <Link href="/resources/images" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
-                    <ImageIcon className="h-5 w-5" />
-                    <span className="font-medium">Imágenes</span>
-                  </Link>
-                  <Link href="/resources/articles" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
-                    <BookOpen className="h-5 w-5" />
-                    <span className="font-medium">Artículos</span>
-                  </Link>
-                  <Link href="/self-assessment" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
-                    <ClipboardCheck className="h-5 w-5" />
-                    <span className="font-medium">Autoevaluación</span>
-                  </Link>
-                  <Link href="/admin/add-notes" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
-                    <FilePlus2 className="h-5 w-5" />
-                    <span className="font-medium">Agregar Apuntes</span>
-                  </Link>
+                  {mobileNavItems.map((item) => {
+                    const active = isActivePath(pathname, item.href);
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        prefetch={true}
+                        aria-current={active ? 'page' : undefined}
+                        className={cn(
+                          'flex items-center gap-3 p-3 rounded-lg transition-colors',
+                          active
+                            ? 'bg-primary text-primary-foreground font-medium'
+                            : 'hover:bg-accent'
+                        )}
+                      >
+                        <Icon className="h-5 w-5" />
+                        <span className="font-medium">{item.label}</span>
+                      </Link>
+                    );
+                  })}
                 </nav>
               </SheetContent>
             </Sheet>
@@ -75,7 +86,7 @@ function HeaderComponent() {
           )}
           
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 min-w-0 flex-1">
+          <Link href="/" prefetch={true} className="flex items-center gap-2 min-w-0 flex-1">
             <span className="text-sm sm:text-lg md:text-xl font-bold tracking-tight font-headline truncate">
               <span className="hidden sm:inline">Compañero de </span>
               <span>Atención Primaria</span>

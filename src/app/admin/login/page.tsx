@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, LogIn, GraduationCap, Info } from "lucide-react";
-import { ThemeToggleButton } from "@/components/theme-toggle-button";
 import { isDemoMode, DEMO_ADMIN } from "@/lib/demo";
 
 // Componente que usa useSearchParams debe estar separado
@@ -20,7 +19,7 @@ function LoginForm() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectPath = searchParams.get('redirect') || '/admin/add-notes';
+  const redirectPath = searchParams.get('redirect') || '/resources/apuntes';
   const sessionExpired = searchParams.get('expired') === 'true';
   const networkError = searchParams.get('error') === 'network';
   // NEXT_PUBLIC_DEMO_MODE se inyecta en build: en cliente refleja el modo demo.
@@ -65,23 +64,20 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative">
-      {/* Theme toggle button in top right corner */}
-      <div className="absolute top-4 right-4">
-        <ThemeToggleButton />
-      </div>
-
-      <Card className="w-full max-w-md shadow-lg border-border">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-            <GraduationCap className="h-6 w-6 text-primary" />
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4 sm:p-6">
+      <Card className="w-full max-w-sm border-border shadow-md sm:max-w-md">
+        <CardHeader className="space-y-3 pb-4 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/20">
+            <GraduationCap className="h-7 w-7 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-bold text-foreground">
-            Panel de Administración
-          </CardTitle>
-          <CardDescription className="text-muted-foreground">
-            Ingresa tus credenciales para acceder
-          </CardDescription>
+          <div className="space-y-1">
+            <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
+              Panel de Administración
+            </CardTitle>
+            <CardDescription className="text-sm text-muted-foreground">
+              Ingresa tus credenciales para acceder
+            </CardDescription>
+          </div>
         </CardHeader>
 
         <CardContent>
@@ -166,25 +162,16 @@ function LoginForm() {
             </Button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            <p className="font-medium">Credenciales demo (solo visuales):</p>
-            <div className="font-mono text-xs bg-muted p-3 rounded mt-2 space-y-1 text-muted-foreground text-left">
-              <div>
-                <strong>Email:</strong> {DEMO_ADMIN.email}
-              </div>
-              <div>
-                <strong>Contraseña:</strong> {DEMO_ADMIN.password}
-              </div>
+          <div className="mt-6 rounded-lg border bg-muted/60 p-3 text-center">
+            <p className="text-xs font-semibold text-foreground">Credenciales demo</p>
+            <div className="mt-1.5 space-y-0.5 font-mono text-xs text-muted-foreground">
+              <div>{DEMO_ADMIN.email} / {DEMO_ADMIN.password}</div>
             </div>
-            <p className="mt-2 text-xs">
-              Referencia informativa del modo demo. El inicio de sesión se valida
-              con el flujo real de autenticación del servidor.
-            </p>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="mt-2"
+              className="mt-2.5 h-8 text-xs"
               onClick={fillDemoCredentials}
               disabled={isLoading}
             >
@@ -201,18 +188,13 @@ function LoginForm() {
 export default function AdminLoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-background p-4 relative">
-        {/* Theme toggle button in top right corner */}
-        <div className="absolute top-4 right-4">
-          <ThemeToggleButton />
-        </div>
-
-        <Card className="w-full max-w-md shadow-lg border-border">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-              <GraduationCap className="h-6 w-6 text-primary" />
+      <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4 sm:p-6">
+        <Card className="w-full max-w-sm border-border shadow-md sm:max-w-md">
+          <CardHeader className="space-y-3 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/20">
+              <GraduationCap className="h-7 w-7 text-primary" />
             </div>
-            <CardTitle className="text-2xl font-bold text-foreground">
+            <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
               Cargando...
             </CardTitle>
           </CardHeader>

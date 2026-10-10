@@ -102,7 +102,7 @@ export default function ProfessorsManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (demo) {
-      setError('La gestión de profesores no está disponible en modo demo.');
+      setError('La gestión de profesores no está disponible por el momento.');
       return;
     }
     setError('');
@@ -163,7 +163,7 @@ export default function ProfessorsManagement() {
 
   const handleDelete = async (professorId: string) => {
     if (demo) {
-      setError('La eliminación de profesores no está disponible en modo demo.');
+      setError('La eliminación de profesores no está disponible por el momento.');
       return;
     }
     if (!confirm('¿Estás seguro de que quieres eliminar este profesor?')) return;
@@ -229,7 +229,7 @@ export default function ProfessorsManagement() {
             </div>
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button onClick={() => setDialogOpen(true)} disabled={demo} title={demo ? 'No disponible en modo demo' : undefined}>
+                <Button onClick={() => setDialogOpen(true)} disabled={demo} title={demo ? 'No disponible por el momento' : undefined}>
                   <Plus className="h-4 w-4 mr-2" />
                   Agregar Profesor
                 </Button>
@@ -304,8 +304,8 @@ export default function ProfessorsManagement() {
             <Alert className="mb-4 border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-100">
               <Info className="h-4 w-4" />
               <AlertDescription>
-                Modo demo: la gestión de profesores requiere base de datos y no está
-                disponible aquí. Se muestra un estado vacío.
+                La gestión de profesores no está disponible aquí por el momento. Se
+                muestra un estado vacío.
               </AlertDescription>
             </Alert>
           )}
@@ -325,9 +325,7 @@ export default function ProfessorsManagement() {
               <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">Sin profesores para mostrar</h3>
               <p className="text-muted-foreground text-sm sm:text-base">
-                {demo
-                  ? 'En modo demo no hay registros de profesores.'
-                  : 'Todavía no hay profesores registrados o no se pudieron cargar.'}
+                Todavía no hay profesores registrados o no se pudieron cargar.
               </p>
               {!demo && (
                 <Button variant="outline" size="sm" className="mt-4" onClick={fetchProfessors}>

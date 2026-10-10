@@ -12,7 +12,6 @@ import {
   Image as ImageIcon, // Renamed to avoid conflict
   ClipboardCheck,
   HeartPulse,
-  FilePlus2,
   Pin,
   PinOff,
 } from 'lucide-react';
@@ -46,8 +45,8 @@ const sidebarNavItems: NavItem[] = [
   { href: '/resources/videos', label: 'Videos', icon: <Video className="h-5 w-5" />, tooltip: "Videos Educativos" },
   { href: '/resources/images', label: 'Imágenes', icon: <ImageIcon className="h-5 w-5" />, tooltip: "Imágenes Médicas" },
   { href: '/resources/articles', label: 'Artículos', icon: <BookOpen className="h-5 w-5" />, tooltip: "Artículos y Publicaciones" },
+  { href: '/resources/apuntes', label: 'Apuntes', icon: <FileText className="h-5 w-5" />, tooltip: "Apuntes de estudio" },
   { href: '/self-assessment', label: 'Autoevaluación', icon: <ClipboardCheck className="h-5 w-5" />, tooltip: "Autoevaluación" },
-  { href: '/admin/add-notes', label: 'Agregar Apuntes', icon: <FilePlus2 className="h-5 w-5" />, tooltip: "Agregar Apuntes (Profesores)" },
 ];
 
 // Memoized component for the page content area
@@ -115,6 +114,12 @@ function MainLayoutInternal({ children }: { children: ReactNode }) {
       setIsEdgeHoveredForUnpinned(false);
     }
   };
+
+  // En la página de login no se muestra Sidebar ni Header: solo el contenido.
+  const isLoginRoute = pathname?.startsWith('/admin/login') ?? false;
+  if (isLoginRoute) {
+    return <PageContent>{children}</PageContent>;
+  }
 
   return (
     <>

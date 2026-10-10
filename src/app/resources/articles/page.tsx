@@ -1,27 +1,167 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, Search, SearchX } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  Plus,
+  Search,
+  SearchX,
+  Trash2,
+} from "lucide-react";
 import { DEMO_RESOURCES } from "@/lib/demo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
-export default async function ArticleResourcesPage({
-  searchParams,
-}: {
-  searchParams?: Promise<{ q?: string }>;
-}) {
-  const params = await searchParams;
-  const searchQuery = (params?.q ?? "").trim();
-  const q = searchQuery.toLowerCase();
+const STORAGE_KEY = "asistente-demo-articles-v1";
+const TIPO = "articulo";
 
-  const recursos = (Array.isArray(DEMO_RESOURCES) ? DEMO_RESOURCES : []).filter(
-    (r) =>
-      r.tipo === "articulo" &&
-      (!q ||
+interface ArticuloMio {
+  id: string;
+  titulo: string;
+  descripcion: string;
+  contenido: string;
+}
+
+interface RecursoVista {
+  id: string;
+  titulo: string;
+  descripcion: string;
+  contenido: string;
+  esMio: boolean;
+}
+
+function cargarArticulosMios(): ArticuloMio[] {
+  try {
+    if (typeof window === "undefined") return [];
+    const crudo = window.localStorage.getItem(STORAGE_KEY);
+    if (!crudo) return [];
+    const parsed: unknown = JSON.parse(crudo);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item): item is ArticuloMio => {
+      if (typeof item !== "object" || item === null) return false;
+      const r = item as Record<string, unknown>;
+      return (
+        typeof r.id === "string" &&
+        typeof r.titulo === "string" &&
+        r.titulo.trim().length > 0
+      );
+    }).map((r) => ({
+      id: String(r.id),
+      titulo: String(r.titulo ?? ""),
+      descripcion: typeof r.descripcion === "string" ? r.descripcion : "",
+      contenido: typeof r.contenido === "string" ? r.contenido : "",
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function guardarArticulosMios(items: ArticuloMio[]) {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  } catch {
+    // se ignora
+  }
+}
+
+export default function ArticleResourcesPage() {
+  const [busqueda, setBusqueda] = useState("");
+  const [mios, setMios] = useState<ArticuloMio[]>([]);
+  const [cargado, setCargado] = useState(false);
+  const [dialogAbierto, setDialogAbierto] = useState(false);
+
+  const [titulo, setTitulo] = useState("");
+  const [descripcion, setDescripcion] = useState("");
+  const [contenido, setContenido] = useState("");
+  const [errorTitulo, setErrorTitulo] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    setMios(cargarArticulosMios());
+    setCargado(true);
+  }, []);
+
+  const mocks = useMemo<RecursoVista[]>(() => {
+    const base = Array.isArray(DEMO_RESOURCES) ? DEMO_RESOURCES : [];
+    return base
+      .filter((r) => (r as { tipo?: unknown })?.tipo === TIPO)
+      .map((r) => {
+        const rec = r as { id?: unknown; titulo?: unknown; descripcion?: unknown };
+        return {
+          id: String(rec.id ?? crypto.randomUUID()),
+          titulo: String(rec.titulo ?? "Artículo sin título"),
+          descripcion: String(rec.descripcion ?? ""),
+          contenido: "",
+          esMio: false,
+        };
+      });
+  }, []);
+
+  const combinados = useMemo<RecursoVista[]>(() => {
+    const propios: RecursoVista[] = mios.map((m) => ({ ...m, esMio: true }));
+    return [...propios, ...mocks];
+  }, [mios, mocks]);
+
+  const filtrados = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    if (!q) return combinados;
+    return combinados.filter(
+      (r) =>
         r.titulo.toLowerCase().includes(q) ||
-        r.descripcion.toLowerCase().includes(q))
-  );
+        r.descripcion.toLowerCase().includes(q) ||
+        r.contenido.toLowerCase().includes(q)
+    );
+  }, [combinados, busqueda]);
+
+  const cerrarDialog = () => {
+    setDialogAbierto(false);
+    setTitulo("");
+    setDescripcion("");
+    setContenido("");
+    setErrorTitulo(undefined);
+  };
+
+  const handleGuardar = () => {
+    if (!titulo.trim()) {
+      setErrorTitulo("El título es obligatorio.");
+      return;
+    }
+    const nuevo: ArticuloMio = {
+      id: `articulo-mio-${Date.now()}`,
+      titulo: titulo.trim(),
+      descripcion: descripcion.trim(),
+      contenido: contenido.trim(),
+    };
+    const actualizados = [nuevo, ...mios];
+    setMios(actualizados);
+    guardarArticulosMios(actualizados);
+    cerrarDialog();
+  };
+
+  const handleEliminar = (id: string) => {
+    const actualizados = mios.filter((m) => m.id !== id);
+    setMios(actualizados);
+    guardarArticulosMios(actualizados);
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -37,34 +177,55 @@ export default async function ArticleResourcesPage({
       </h1>
       <p className="mb-6 text-center text-muted-foreground">
         Lecturas recomendadas para profundizar en atención primaria (contenido
-        demo).
+        demo + tus aportes locales).
       </p>
 
-      <form
-        method="get"
-        action=""
-        className="mx-auto mb-8 flex max-w-xl flex-col items-center gap-2 sm:flex-row"
-      >
-        <Input
-          type="search"
-          name="q"
-          defaultValue={searchQuery}
-          placeholder="Buscar artículos por título o descripción…"
-          className="flex-grow"
-          aria-label="Buscar artículos"
-        />
-        <Button type="submit" className="w-full sm:w-auto">
-          <Search className="h-4 w-4 sm:mr-2" />
-          <span>Buscar</span>
+      <div className="mx-auto mb-6 flex max-w-2xl flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-grow">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar artículos por título, descripción o contenido…"
+            aria-label="Buscar artículos"
+            className="pl-9"
+          />
+        </div>
+        <Button
+          type="button"
+          onClick={() => setDialogAbierto(true)}
+          className="w-full sm:w-auto"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Agregar artículo
         </Button>
-      </form>
+      </div>
 
       <p className="mb-4 text-center text-sm text-muted-foreground" aria-live="polite">
-        Mostrando {recursos.length} artículo{recursos.length === 1 ? "" : "s"}
-        {searchQuery ? ` para “${searchQuery}”` : ""}
+        {cargado
+          ? `Mostrando ${filtrados.length} de ${combinados.length} artículo${combinados.length === 1 ? "" : "s"} (${mios.length} mío${mios.length === 1 ? "" : "s"} + ${mocks.length} demo)`
+          : "Cargando artículos…"}
+        {busqueda.trim() ? ` · búsqueda: “${busqueda.trim()}”` : ""}
       </p>
 
-      {recursos.length === 0 ? (
+      {busqueda.trim() && (
+        <div className="mb-6 flex justify-center">
+          <Button type="button" variant="outline" size="sm" onClick={() => setBusqueda("")}>
+            Limpiar búsqueda
+          </Button>
+        </div>
+      )}
+
+      {!cargado ? (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="h-40" />
+            </Card>
+          ))}
+        </div>
+      ) : filtrados.length === 0 ? (
         <Card className="mx-auto max-w-xl bg-muted/50">
           <CardContent className="flex flex-col items-center gap-3 px-6 py-10 text-center">
             <span className="rounded-full bg-primary/10 p-4">
@@ -72,50 +233,134 @@ export default async function ArticleResourcesPage({
             </span>
             <p className="text-lg font-semibold">Sin artículos para mostrar</p>
             <p className="text-sm text-muted-foreground">
-              {searchQuery
-                ? `No se encontraron artículos para “${searchQuery}”. Prueba con otra búsqueda.`
-                : "Aún no hay artículos en el material demo."}
+              {combinados.length === 0
+                ? "Aún no hay artículos. Agrega el primero con el botón “Agregar artículo”."
+                : `No se encontraron artículos para “${busqueda.trim()}”. Prueba con otra búsqueda.`}
             </p>
-            <Button asChild variant="outline" size="sm">
-              <Link href="/resources">Ver todos los recursos</Link>
-            </Button>
+            <div className="flex flex-wrap justify-center gap-2">
+              {busqueda.trim() && (
+                <Button type="button" variant="outline" size="sm" onClick={() => setBusqueda("")}>
+                  Limpiar búsqueda
+                </Button>
+              )}
+              <Button type="button" size="sm" onClick={() => setDialogAbierto(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Agregar artículo
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {recursos.map((resource) => (
+          {filtrados.map((resource) => (
             <Card
               key={resource.id}
               className="flex h-full flex-col rounded-xl shadow-lg transition-all duration-300 hover:border-primary/50 hover:shadow-2xl"
             >
-              <CardHeader className="flex flex-row items-center gap-4 p-4">
+              <CardHeader className="flex flex-row items-start gap-4 p-4">
                 <span className="rounded-full bg-primary/10 p-2.5">
                   <BookOpen className="h-6 w-6 text-primary" />
                 </span>
-                <div>
+                <div className="min-w-0 flex-1">
                   <CardTitle className="font-headline text-lg font-semibold leading-snug">
                     {resource.titulo}
                   </CardTitle>
-                  <div className="mt-2 flex gap-2">
+                  <div className="mt-2 flex flex-wrap gap-2">
                     <Badge variant="secondary">Artículo</Badge>
-                    <Badge variant="outline">Demo</Badge>
+                    {resource.esMio ? (
+                      <Badge variant="default">Mío</Badge>
+                    ) : (
+                      <Badge variant="outline">Demo</Badge>
+                    )}
                   </div>
                 </div>
+                {resource.esMio && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleEliminar(resource.id)}
+                    aria-label={`Eliminar ${resource.titulo}`}
+                    title="Eliminar mi artículo"
+                    className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
               </CardHeader>
-              <CardContent className="flex-grow p-4 pt-0">
+              <CardContent className="flex-grow space-y-2 p-4 pt-0">
                 <p className="line-clamp-3 text-sm text-muted-foreground">
-                  {resource.descripcion}
+                  {resource.descripcion || "Sin descripción."}
                 </p>
+                {resource.esMio && resource.contenido && (
+                  <p className="line-clamp-4 whitespace-pre-line rounded-md bg-muted/60 p-2 text-xs text-foreground">
+                    {resource.contenido}
+                  </p>
+                )}
               </CardContent>
               <CardFooter className="p-4 pt-0">
                 <Button type="button" variant="outline" className="w-full" disabled>
-                  Recurso de muestra
+                  {resource.esMio ? "Artículo local (mock)" : "Recurso de muestra"}
                 </Button>
               </CardFooter>
             </Card>
           ))}
         </div>
       )}
+
+      <Dialog open={dialogAbierto} onOpenChange={(o) => (o ? setDialogAbierto(true) : cerrarDialog())}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Agregar artículo (mock local)</DialogTitle>
+            <DialogDescription>
+              Se guarda solo en tu navegador (localStorage). No se comparte ni se sube al servidor.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-2">
+            <div className="grid gap-2">
+              <Label htmlFor="art-titulo">Título *</Label>
+              <Input
+                id="art-titulo"
+                value={titulo}
+                onChange={(e) => setTitulo(e.target.value)}
+                placeholder="Ej.: Dieta DASH en consultorio"
+                maxLength={120}
+              />
+              {errorTitulo && <p className="text-sm text-destructive">{errorTitulo}</p>}
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="art-descripcion">Descripción</Label>
+              <Textarea
+                id="art-descripcion"
+                value={descripcion}
+                onChange={(e) => setDescripcion(e.target.value)}
+                placeholder="Resumen corto del artículo…"
+                rows={2}
+                maxLength={300}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="art-contenido">Contenido</Label>
+              <Textarea
+                id="art-contenido"
+                value={contenido}
+                onChange={(e) => setContenido(e.target.value)}
+                placeholder="Pega aquí el texto, ideas clave o resumen del artículo…"
+                rows={6}
+                maxLength={4000}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={cerrarDialog}>
+              Cancelar
+            </Button>
+            <Button type="button" onClick={handleGuardar}>
+              Guardar artículo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

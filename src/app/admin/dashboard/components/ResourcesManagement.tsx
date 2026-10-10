@@ -141,7 +141,7 @@ export default function ResourcesManagement() {
 
   const handleDelete = async (resourceId: string) => {
     if (demo) {
-      setError('La eliminación no está disponible en la vista previa demo (solo lectura).');
+      setError('La eliminación no está disponible en la vista previa (solo lectura).');
       return;
     }
     if (!confirm('¿Estás seguro de que quieres eliminar este recurso?')) return;
@@ -191,7 +191,7 @@ export default function ResourcesManagement() {
               <div>
                 <CardTitle>Gestión de Recursos</CardTitle>
                 <CardDescription>
-                  {demo ? 'Vista previa demo de solo lectura' : 'Recursos educativos del sistema'}
+                  {demo ? 'Vista previa de solo lectura' : 'Recursos educativos del sistema'}
                 </CardDescription>
               </div>
             </div>
@@ -207,7 +207,7 @@ export default function ResourcesManagement() {
             <Alert className="mb-4 border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-100">
               <Info className="h-4 w-4" />
               <AlertDescription>
-                Modo demo: vista previa de solo lectura con datos locales. La eliminación y
+                Vista previa de solo lectura con datos locales. La eliminación y
                 la carga desde la API no están disponibles aquí.
               </AlertDescription>
             </Alert>
@@ -229,7 +229,7 @@ export default function ResourcesManagement() {
               <h3 className="text-lg font-medium text-foreground mb-2">No hay recursos</h3>
               <p className="text-muted-foreground text-sm sm:text-base">
                 {demo
-                  ? 'No hay recursos demo para mostrar.'
+                  ? 'No hay recursos para mostrar.'
                   : 'Los profesores aún no han subido recursos al sistema.'}
               </p>
               {!demo && (
@@ -295,7 +295,7 @@ export default function ResourcesManagement() {
                                 size="sm"
                                 onClick={() => handleDelete(resource.id)}
                                 disabled={demo}
-                                title={demo ? 'No disponible en modo demo' : 'Eliminar recurso'}
+                                title={demo ? 'No disponible por el momento' : 'Eliminar recurso'}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -326,7 +326,7 @@ export default function ResourcesManagement() {
                           size="sm"
                           onClick={() => handleDelete(resource.id)}
                           disabled={demo}
-                          title={demo ? 'No disponible en modo demo' : 'Eliminar recurso'}
+                          title={demo ? 'No disponible por el momento' : 'Eliminar recurso'}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

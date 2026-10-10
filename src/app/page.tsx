@@ -252,7 +252,7 @@ export default function HomePage() {
       try {
         fallback = demoChatReply(currentMessageContent);
       } catch {
-        fallback = 'Estoy en modo demo: puedo ayudarte con los apuntes de hipertensión, diabetes tipo 2 y vacunación del adulto. Probá con una de las preguntas sugeridas.';
+        fallback = 'Puedo ayudarte con los apuntes de hipertensión, diabetes tipo 2 y vacunación del adulto. Probá con una de las preguntas sugeridas.';
       }
       const demoMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -260,7 +260,7 @@ export default function HomePage() {
         content: fallback,
       };
       setMessages(prev => [...prev, demoMessage]);
-      setChatError('Sin conexión con el servidor: te muestro una respuesta demo. Podés reintentar.');
+      setChatError('Sin conexión con el servidor. Podés reintentar.');
       setLastFailedQuestion(currentMessageContent);
       // Hacer scroll después de agregar mensaje de error
       setTimeout(scrollToBottom, 100);
@@ -292,7 +292,7 @@ export default function HomePage() {
       <section aria-labelledby="titulo-inicio" className="mx-auto w-full max-w-3xl text-center">
         <p className="inline-flex items-center gap-1.5 rounded-full border bg-muted/60 px-3 py-1 text-xs font-medium text-muted-foreground sm:text-sm">
           <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" />
-          Sin cuenta · Sin configuración · Funciona en modo demo
+          Sin cuenta · Sin configuración · Acceso inmediato
         </p>
         <h1 id="titulo-inicio" className="mt-4 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
           Tu Compañero de <span className="underline decoration-primary decoration-4 underline-offset-4">Atención Primaria</span>
@@ -337,18 +337,18 @@ export default function HomePage() {
           </Card>
         </Link>
 
-        <Link href="/admin/add-notes" className="group block rounded-xl focus-visible:outline-none">
+        <Link href="/resources/apuntes" className="group block rounded-xl focus-visible:outline-none">
           <Card className="flex h-full flex-col shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg group-hover:border-primary/50">
             <CardHeader className="pb-2">
               <div className="mb-3 w-fit rounded-full bg-primary/15 p-3">
                 <FilePlus2 className="h-5 w-5 text-primary" aria-hidden="true" />
               </div>
               <CardTitle className="text-base sm:text-lg">Apuntes</CardTitle>
-              <CardDescription>Sube y organiza tus apuntes en PDF para estudiar y consultar.</CardDescription>
+              <CardDescription>Consulta tus apuntes en PDF para estudiar y repasar.</CardDescription>
             </CardHeader>
             <CardFooter className="mt-auto pt-2">
               <span className="inline-flex items-center text-sm font-semibold text-primary">
-                Agregar apuntes
+                Ver apuntes
                 <ArrowRight className="ml-1.5 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
               </span>
             </CardFooter>
@@ -408,11 +408,8 @@ export default function HomePage() {
             <CardTitle className="flex items-center gap-2 font-headline text-lg sm:text-xl">
               <MessageCircle className="text-accent h-5 w-5 sm:h-6 sm:w-6" />
               Asistente de Chat IA
-              <span className="ml-auto rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-100">
-                Modo demo
-              </span>
             </CardTitle>
-            <CardDescription className="text-sm">Haz preguntas y obtén información instantánea sobre temas de atención primaria. Respuestas de demostración con fines educativos.</CardDescription>
+            <CardDescription className="text-sm">Haz preguntas y obtén información instantánea sobre temas de atención primaria. Respuestas con fines educativos.</CardDescription>
             <div className="mt-2 flex flex-wrap gap-2" aria-label="Preguntas sugeridas">
               {SUGGESTED_QUESTIONS.map((q) => (
                 <Button

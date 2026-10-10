@@ -1,15 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
-  CheckCircle2,
-  ClipboardCheck,
-  RotateCcw,
+  BookOpenCheck,
+  ClipboardList,
+  HelpCircle,
+  ListChecks,
+  Plus,
   SearchX,
-  Trophy,
-  XCircle,
+  Trash2,
 } from "lucide-react";
-import { DEMO_QUIZ } from "@/lib/demo";
+import * as demoModule from "@/lib/demo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,290 +22,556 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
-function mensajePorPuntaje(porcentaje: number): string {
-  if (porcentaje >= 80)
-    return "¡Excelente! Dominas los conceptos clave de atención primaria.";
-  if (porcentaje >= 60)
-    return "Bien. Repasa los temas marcados y vuelve a intentarlo para afianzar.";
-  return "Te conviene repasar los apuntes (HTA, diabetes y vacunación) y reintentar el quiz.";
+// ---------------------------------------------------------------------------
+// Tipos (contrato esperado de DEMO_ASSESSMENTS en src/lib/demo.ts).
+// Lectura defensiva: ese export puede no existir aún (otro agente lo crea
+// en paralelo). No se importa por nombre para no romper la compilación.
+// ---------------------------------------------------------------------------
+type DemoPregunta = {
+  id: string;
+  pregunta: string;
+  opciones: string[];
+  respuesta: number;
+  explicacion?: string;
+};
+
+type DemoAssessment = {
+  id: string;
+  titulo: string;
+  descripcion: string;
+  tema: string;
+  nivel: string;
+  preguntas: DemoPregunta[];
+};
+
+type PreguntaDraft = {
+  pregunta: string;
+  opciones: string[];
+  respuesta: number;
+  explicacion: string;
+};
+
+const STORAGE_KEY = "asistente-demo-assessments-v1";
+const NIVELES = ["Inicial", "Intermedio", "Avanzado"] as const;
+
+function leerMocks(): DemoAssessment[] {
+  const raw = (demoModule as unknown as { DEMO_ASSESSMENTS?: unknown })
+    .DEMO_ASSESSMENTS;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(esAssessmentValido) as DemoAssessment[];
 }
 
-export default function SelfAssessmentPage() {
-  const preguntas = useMemo(
-    () => (Array.isArray(DEMO_QUIZ) ? DEMO_QUIZ : []),
-    []
+function esAssessmentValido(a: unknown): a is DemoAssessment {
+  if (!a || typeof a !== "object") return false;
+  const v = a as Record<string, unknown>;
+  return (
+    typeof v.id === "string" &&
+    typeof v.titulo === "string" &&
+    Array.isArray(v.preguntas)
   );
-  const [respuestas, setRespuestas] = useState<Record<string, number>>({});
-  const [corregido, setCorregido] = useState(false);
+}
 
-  const respondidas = Object.keys(respuestas).length;
-  const total = preguntas.length;
-  const faltantes = total - respondidas;
+function leerLocal(): DemoAssessment[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(esAssessmentValido);
+  } catch {
+    return [];
+  }
+}
 
-  const puntaje = useMemo(() => {
-    if (!corregido) return 0;
-    return preguntas.filter((p) => respuestas[p.id] === p.respuesta).length;
-  }, [corregido, preguntas, respuestas]);
-  const porcentaje = total > 0 ? Math.round((puntaje / total) * 100) : 0;
+function nuevaPreguntaVacia(): PreguntaDraft {
+  return { pregunta: "", opciones: ["", ""], respuesta: 0, explicacion: "" };
+}
 
-  const elegir = (preguntaId: string, opcionIdx: number) => {
-    if (corregido) return;
-    setRespuestas((prev) => ({ ...prev, [preguntaId]: opcionIdx }));
-  };
+export default function SelfAssessmentCatalogPage() {
+  const mocks = useMemo(() => leerMocks(), []);
+  const [mias, setMias] = useState<DemoAssessment[]>([]);
+  const [hidratado, setHidratado] = useState(false);
 
-  const comprobar = () => {
-    if (respondidas < total) return;
-    setCorregido(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  // Formulario "Crear evaluación"
+  const [abierto, setAbierto] = useState(false);
+  const [titulo, setTitulo] = useState("");
+  const [descripcion, setDescripcion] = useState("");
+  const [tema, setTema] = useState("");
+  const [nivel, setNivel] = useState<string>("Inicial");
+  const [preguntas, setPreguntas] = useState<PreguntaDraft[]>([
+    nuevaPreguntaVacia(),
+  ]);
+  const [error, setError] = useState<string | null>(null);
 
-  const reintentar = () => {
-    setRespuestas({});
-    setCorregido(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  // Hidratar customizadas desde localStorage (solo cliente).
+  useEffect(() => {
+    setMias(leerLocal());
+    setHidratado(true);
+  }, []);
 
-  if (preguntas.length === 0) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <header className="mb-8 text-center">
+  // Persistir customizadas.
+  useEffect(() => {
+    if (!hidratado) return;
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(mias));
+    } catch {
+      // Cuota llena o almacenamiento bloqueado: no rompe la página.
+    }
+  }, [mias, hidratado]);
+
+  const idsMias = useMemo(() => new Set(mias.map((m) => m.id)), [mias]);
+
+  const evaluaciones = useMemo(() => {
+    const vistas = new Map<string, DemoAssessment>();
+    for (const m of mocks) vistas.set(m.id, m);
+    // Las mías fusionan con los mocks (sin duplicar ids).
+    for (const c of mias) vistas.set(c.id, c);
+    return Array.from(vistas.values());
+  }, [mocks, mias]);
+
+  function resetForm() {
+    setTitulo("");
+    setDescripcion("");
+    setTema("");
+    setNivel("Inicial");
+    setPreguntas([nuevaPreguntaVacia()]);
+    setError(null);
+  }
+
+  function actualizarPregunta(i: number, patch: Partial<PreguntaDraft>) {
+    setPreguntas((prev) =>
+      prev.map((p, idx) => (idx === i ? { ...p, ...patch } : p))
+    );
+  }
+
+  function actualizarOpcion(pi: number, oi: number, valor: string) {
+    setPreguntas((prev) =>
+      prev.map((p, idx) =>
+        idx === pi
+          ? { ...p, opciones: p.opciones.map((o, j) => (j === oi ? valor : o)) }
+          : p
+      )
+    );
+  }
+
+  function agregarPregunta() {
+    setPreguntas((prev) => [...prev, nuevaPreguntaVacia()]);
+  }
+
+  function quitarPregunta(i: number) {
+    setPreguntas((prev) => (prev.length <= 1 ? prev : prev.filter((_, idx) => idx !== i)));
+  }
+
+  function agregarOpcion(pi: number) {
+    setPreguntas((prev) =>
+      prev.map((p, idx) =>
+        idx === pi ? { ...p, opciones: [...p.opciones, ""] } : p
+      )
+    );
+  }
+
+  function quitarOpcion(pi: number, oi: number) {
+    setPreguntas((prev) =>
+      prev.map((p, idx) => {
+        if (idx !== pi) return p;
+        if (p.opciones.length <= 2) return p;
+        const opciones = p.opciones.filter((_, j) => j !== oi);
+        const respuesta = Math.min(p.respuesta, opciones.length - 1);
+        return { ...p, opciones, respuesta };
+      })
+    );
+  }
+
+  function guardar() {
+    const tituloLimpio = titulo.trim();
+    if (!tituloLimpio) {
+      setError("Ponle un título a la evaluación.");
+      return;
+    }
+    const validas = preguntas
+      .map((p) => ({
+        pregunta: p.pregunta.trim(),
+        opciones: p.opciones.map((o) => o.trim()),
+        respuesta: p.respuesta,
+        explicacion: p.explicacion.trim(),
+      }))
+      .filter(
+        (p) =>
+          p.pregunta.length > 0 &&
+          p.opciones.length >= 2 &&
+          p.opciones.every((o) => o.length > 0) &&
+          p.respuesta >= 0 &&
+          p.respuesta < p.opciones.length
+      );
+    if (validas.length === 0) {
+      setError(
+        "Agrega al menos una pregunta válida: texto, 2 o más opciones con texto y marca la correcta."
+      );
+      return;
+    }
+    const stamp = Date.now();
+    const nueva: DemoAssessment = {
+      id: `mia-${stamp}`,
+      titulo: tituloLimpio,
+      descripcion:
+        descripcion.trim() || "Evaluación creada por ti en este navegador.",
+      tema: tema.trim() || "General",
+      nivel: nivel.trim() || "Inicial",
+      preguntas: validas.map((p, i) => ({
+        id: `mia-${stamp}-p${i}`,
+        pregunta: p.pregunta,
+        opciones: p.opciones,
+        respuesta: p.respuesta,
+        ...(p.explicacion ? { explicacion: p.explicacion } : {}),
+      })),
+    };
+    setMias((prev) => [...prev, nueva]);
+    setAbierto(false);
+    resetForm();
+  }
+
+  function eliminar(id: string) {
+    setMias((prev) => prev.filter((m) => m.id !== id));
+  }
+
+  return (
+    <div className="container mx-auto max-w-6xl px-4 py-8">
+      <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
           <h1 className="font-headline text-4xl font-bold tracking-tight text-primary md:text-5xl">
-            Autoevaluación
+            Autoevaluaciones
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-            Pon a prueba tus conocimientos con preguntas de repaso.
+          <p className="mt-3 max-w-2xl text-lg text-muted-foreground">
+            Elige una evaluación para poner a prueba tus conocimientos.
+            {hidratado && evaluaciones.length > 0
+              ? ` Hay ${evaluaciones.length} disponible${evaluaciones.length === 1 ? "" : "s"}.`
+              : " Las preguntas se corrigen con feedback inmediato."}
           </p>
-        </header>
+        </div>
+
+        <Dialog
+          open={abierto}
+          onOpenChange={(v) => {
+            setAbierto(v);
+            if (!v) setError(null);
+          }}
+        >
+          <DialogTrigger asChild>
+            <Button type="button" className="w-full sm:w-auto">
+              <Plus className="mr-2 h-4 w-4" />
+              Crear evaluación
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Crear evaluación</DialogTitle>
+              <DialogDescription>
+                Se guarda solo en este navegador (demo local) y aparece con la
+                insignia “Mía”.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid gap-4 py-2">
+              <div className="grid gap-2">
+                <Label htmlFor="nueva-titulo">Título *</Label>
+                <Input
+                  id="nueva-titulo"
+                  value={titulo}
+                  onChange={(e) => setTitulo(e.target.value)}
+                  placeholder="Ej. Repaso de HTA"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="nueva-descripcion">Descripción</Label>
+                <Textarea
+                  id="nueva-descripcion"
+                  value={descripcion}
+                  onChange={(e) => setDescripcion(e.target.value)}
+                  placeholder="¿Qué repasa esta evaluación?"
+                  rows={2}
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="nueva-tema">Tema</Label>
+                  <Input
+                    id="nueva-tema"
+                    value={tema}
+                    onChange={(e) => setTema(e.target.value)}
+                    placeholder="Ej. Hipertensión"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="nueva-nivel">Nivel</Label>
+                  <Select value={nivel} onValueChange={setNivel}>
+                    <SelectTrigger id="nueva-nivel">
+                      <SelectValue placeholder="Elige un nivel" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {NIVELES.map((n) => (
+                        <SelectItem key={n} value={n}>
+                          {n}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid gap-3">
+                <div className="flex items-center justify-between">
+                  <Label>Preguntas *</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={agregarPregunta}
+                  >
+                    <Plus className="mr-1 h-4 w-4" />
+                    Agregar pregunta
+                  </Button>
+                </div>
+
+                {preguntas.map((p, pi) => (
+                  <div key={pi} className="rounded-lg border p-4">
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold">
+                        Pregunta {pi + 1}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => quitarPregunta(pi)}
+                        disabled={preguntas.length <= 1}
+                        aria-label={`Quitar pregunta ${pi + 1}`}
+                      >
+                        <Trash2 className="mr-1 h-4 w-4" />
+                        Quitar
+                      </Button>
+                    </div>
+
+                    <div className="grid gap-3">
+                      <Input
+                        value={p.pregunta}
+                        onChange={(e) =>
+                          actualizarPregunta(pi, { pregunta: e.target.value })
+                        }
+                        placeholder="Escribe la pregunta"
+                        aria-label={`Texto de la pregunta ${pi + 1}`}
+                      />
+
+                      <div className="grid gap-2">
+                        {p.opciones.map((op, oi) => (
+                          <div key={oi} className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name={`correcta-${pi}`}
+                              checked={p.respuesta === oi}
+                              onChange={() =>
+                                actualizarPregunta(pi, { respuesta: oi })
+                              }
+                              aria-label={`Marcar opción ${oi + 1} como correcta en pregunta ${pi + 1}`}
+                              className="h-4 w-4 shrink-0 accent-primary"
+                            />
+                            <Input
+                              value={op}
+                              onChange={(e) =>
+                                actualizarOpcion(pi, oi, e.target.value)
+                              }
+                              placeholder={`Opción ${oi + 1} (marca la correcta)`}
+                              aria-label={`Opción ${oi + 1} de la pregunta ${pi + 1}`}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => quitarOpcion(pi, oi)}
+                              disabled={p.opciones.length <= 2}
+                              aria-label={`Quitar opción ${oi + 1}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => agregarOpcion(pi)}
+                          className="w-fit"
+                        >
+                          <Plus className="mr-1 h-4 w-4" />
+                          Agregar opción
+                        </Button>
+                      </div>
+
+                      <Input
+                        value={p.explicacion}
+                        onChange={(e) =>
+                          actualizarPregunta(pi, {
+                            explicacion: e.target.value,
+                          })
+                        }
+                        placeholder="Explicación (opcional)"
+                        aria-label={`Explicación de la pregunta ${pi + 1}`}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {error && (
+                <p role="alert" className="text-sm text-destructive">
+                  {error}
+                </p>
+              )}
+            </div>
+
+            <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setAbierto(false)}
+                className="w-full sm:w-auto"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={guardar}
+                className="w-full sm:w-auto"
+              >
+                Guardar evaluación
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </header>
+
+      {!hidratado ? (
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader>
+                <div className="h-4 w-2/3 rounded bg-muted" />
+                <div className="mt-2 h-3 w-full rounded bg-muted" />
+              </CardHeader>
+              <CardContent>
+                <div className="h-3 w-1/2 rounded bg-muted" />
+              </CardContent>
+              <CardFooter>
+                <div className="h-10 w-full rounded bg-muted" />
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      ) : evaluaciones.length === 0 ? (
         <Card className="mx-auto max-w-xl bg-muted/50">
           <CardContent className="flex flex-col items-center gap-3 px-6 py-10 text-center">
             <span className="rounded-full bg-primary/10 p-4">
               <SearchX className="h-8 w-8 text-primary" />
             </span>
-            <p className="text-lg font-semibold">
-              Sin preguntas por el momento
-            </p>
+            <p className="text-lg font-semibold">Pronto habrá evaluaciones</p>
             <p className="text-sm text-muted-foreground">
-              No se pudo cargar el cuestionario de demostración. Intenta
-              recargar la página más tarde.
+              Aún no hay autoevaluaciones disponibles. Puedes crear la primera
+              con el botón “Crear evaluación”: se guarda en este navegador.
             </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="container mx-auto max-w-3xl px-4 py-8">
-      <header className="mb-8 text-center">
-        <h1 className="font-headline text-4xl font-bold tracking-tight text-primary md:text-5xl">
-          Autoevaluación
-        </h1>
-        <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-          Responde las {total} preguntas y comprueba tu puntaje al final.
-          Recibirás feedback por pregunta.
-        </p>
-      </header>
-
-      <div className="mb-6 flex items-center gap-3">
-        <Progress
-          value={total > 0 ? (respondidas / total) * 100 : 0}
-          aria-label={`Progreso: ${respondidas} de ${total} respondidas`}
-        />
-        <span className="whitespace-nowrap text-sm text-muted-foreground">
-          {respondidas}/{total}
-        </span>
-      </div>
-
-      {corregido && (
-        <Card className="mb-8 border-primary/40 shadow-lg">
-          <CardHeader className="flex flex-row items-center gap-4">
-            <span className="rounded-full bg-primary/10 p-3">
-              <Trophy className="h-8 w-8 text-primary" />
-            </span>
-            <div>
-              <CardTitle className="font-headline text-2xl">
-                Tu puntaje: {puntaje}/{total} ({porcentaje}%)
-              </CardTitle>
-              <CardDescription className="mt-1 text-base">
-                {mensajePorPuntaje(porcentaje)}
-              </CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Progress value={porcentaje} aria-label={`Puntaje: ${porcentaje} por ciento`} />
-          </CardContent>
-          <CardFooter className="flex flex-col gap-2 sm:flex-row">
-            <Button type="button" onClick={reintentar} className="w-full sm:w-auto">
-              <RotateCcw className="mr-2 h-4 w-4" />
-              Reintentar quiz
-            </Button>
-            <p className="text-sm text-muted-foreground sm:ml-2 sm:self-center">
-              Puedes cambiar tus respuestas solo después de reintentar.
-            </p>
-          </CardFooter>
-        </Card>
-      )}
-
-      <div className="flex flex-col gap-6">
-        {preguntas.map((p, idx) => {
-          const elegida = respuestas[p.id];
-          const sinResponder = elegida === undefined;
-          const esCorrecta = corregido && elegida === p.respuesta;
-          const esIncorrecta =
-            corregido && !sinResponder && elegida !== p.respuesta;
-
-          return (
-            <Card
-              key={p.id}
-              className={cn(
-                "rounded-xl shadow-lg transition-colors",
-                corregido &&
-                  esCorrecta &&
-                  "border-green-500/60 bg-green-50/50 dark:bg-green-950/20",
-                corregido &&
-                  esIncorrecta &&
-                  "border-red-500/60 bg-red-50/50 dark:bg-red-950/20"
-              )}
+            <Button
+              type="button"
+              onClick={() => setAbierto(true)}
+              className="mt-2"
             >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-3">
-                  <CardTitle className="font-headline text-lg font-semibold leading-snug">
-                    <span className="mr-2 text-primary">{idx + 1}.</span>
-                    {p.pregunta}
-                  </CardTitle>
-                  {corregido && (
-                    <Badge
-                      variant={esCorrecta ? "default" : "destructive"}
-                      className={cn(
-                        "shrink-0",
-                        esCorrecta && "bg-green-600 hover:bg-green-600/90"
-                      )}
-                    >
-                      {esCorrecta ? "Correcta" : "A revisar"}
-                    </Badge>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-2">
-                {p.opciones.map((opcion, opcionIdx) => {
-                  const esLaCorrecta = p.respuesta === opcionIdx;
-                  const esLaElegida = elegida === opcionIdx;
-                  return (
-                    <button
-                      key={opcionIdx}
-                      type="button"
-                      disabled={corregido}
-                      onClick={() => elegir(p.id, opcionIdx)}
-                      aria-pressed={esLaElegida}
-                      className={cn(
-                        "flex items-center justify-between gap-3 rounded-lg border px-4 py-3 text-left text-sm transition-all",
-                        !corregido &&
-                          !esLaElegida &&
-                          "border-border hover:border-primary/60 hover:bg-muted/60",
-                        !corregido &&
-                          esLaElegida &&
-                          "border-primary bg-primary/10 font-medium",
-                        corregido &&
-                          esLaCorrecta &&
-                          "border-green-600 bg-green-100 font-medium dark:bg-green-950/40",
-                        corregido &&
-                          esLaElegida &&
-                          !esLaCorrecta &&
-                          "border-red-500 bg-red-100 dark:bg-red-950/40",
-                        corregido &&
-                          !esLaElegida &&
-                          !esLaCorrecta &&
-                          "opacity-70",
-                        corregido && "cursor-default"
-                      )}
-                    >
-                      <span>
-                        <span className="mr-2 font-semibold text-muted-foreground">
-                          {String.fromCharCode(65 + opcionIdx)}.
-                        </span>
-                        {opcion}
-                      </span>
-                      {corregido && esLaCorrecta && (
-                        <CheckCircle2 className="h-5 w-5 shrink-0 text-green-600" />
-                      )}
-                      {corregido && esLaElegida && !esLaCorrecta && (
-                        <XCircle className="h-5 w-5 shrink-0 text-red-500" />
-                      )}
-                    </button>
-                  );
-                })}
-
-                {corregido && (
-                  <p
-                    className={cn(
-                      "mt-2 flex items-start gap-2 rounded-lg px-3 py-2 text-sm",
-                      esCorrecta
-                        ? "bg-green-100 text-green-900 dark:bg-green-950/40 dark:text-green-100"
-                        : "bg-red-100 text-red-900 dark:bg-red-950/40 dark:text-red-100"
-                    )}
-                    role="status"
-                  >
-                    {esCorrecta ? (
-                      <>
-                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-                        ¡Correcto! Buen dominio de este concepto.
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                        Respuesta correcta:{" "}
-                        {p.opciones[p.respuesta] ??
-                          "revisa el material de estudio"}
-                        . Repasa este tema en los recursos.
-                      </>
-                    )}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      {!corregido ? (
-        <div className="mt-8 text-center">
-          <Button
-            type="button"
-            size="lg"
-            onClick={comprobar}
-            disabled={faltantes > 0}
-            className="w-full sm:w-auto"
-          >
-            <ClipboardCheck className="mr-2 h-5 w-5" />
-            Comprobar resultados
-          </Button>
-          <p className="mt-3 text-sm text-muted-foreground" aria-live="polite">
-            {faltantes > 0
-              ? `Te faltan ${faltantes} pregunta${faltantes === 1 ? "" : "s"} por responder.`
-              : "¡Listo! Ya puedes ver tu puntaje."}
-          </p>
-        </div>
+              <Plus className="mr-2 h-4 w-4" />
+              Crear mi primera evaluación
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="mt-8 text-center">
-          <Button
-            type="button"
-            size="lg"
-            variant="outline"
-            onClick={reintentar}
-            className="w-full sm:w-auto"
-          >
-            <RotateCcw className="mr-2 h-5 w-5" />
-            Intentar de nuevo
-          </Button>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {evaluaciones.map((a) => {
+            const esMia = idsMias.has(a.id);
+            const total = Array.isArray(a.preguntas) ? a.preguntas.length : 0;
+            return (
+              <Card key={a.id} className="flex flex-col rounded-xl shadow-lg">
+                <CardHeader className="pb-3">
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    {a.tema && <Badge variant="secondary">{a.tema}</Badge>}
+                    {a.nivel && <Badge variant="outline">{a.nivel}</Badge>}
+                    {esMia && <Badge>Mía</Badge>}
+                  </div>
+                  <CardTitle className="font-headline text-lg font-semibold leading-snug">
+                    {a.titulo}
+                  </CardTitle>
+                  {a.descripcion && (
+                    <CardDescription className="line-clamp-2">
+                      {a.descripcion}
+                    </CardDescription>
+                  )}
+                </CardHeader>
+                <CardContent className="flex flex-1 flex-col gap-2 text-sm text-muted-foreground">
+                  <p className="flex items-center gap-2">
+                    <ListChecks className="h-4 w-4 shrink-0 text-primary" />
+                    {total} pregunta{total === 1 ? "" : "s"}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <ClipboardList className="h-4 w-4 shrink-0 text-primary" />
+                    Corrección con feedback inmediato
+                  </p>
+                </CardContent>
+                <CardFooter className="flex gap-2">
+                  <Button asChild className="flex-1">
+                    <Link href={`/self-assessment/${a.id}`}>
+                      <BookOpenCheck className="mr-2 h-4 w-4" />
+                      Comenzar
+                    </Link>
+                  </Button>
+                  {esMia && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => eliminar(a.id)}
+                      aria-label={`Eliminar ${a.titulo}`}
+                      title="Eliminar mi evaluación"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </CardFooter>
+              </Card>
+            );
+          })}
         </div>
       )}
 
-      <p className="mt-8 text-center text-xs text-muted-foreground">
-        Cuestionario de demostración con fines educativos. No reemplaza el
-        criterio médico profesional.
+      <p className="mt-8 flex items-start justify-center gap-2 text-center text-xs text-muted-foreground">
+        <HelpCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        <span>
+          Contenido de demostración con fines educativos. Las evaluaciones
+          creadas se guardan solo en este navegador.
+        </span>
       </p>
     </div>
   );

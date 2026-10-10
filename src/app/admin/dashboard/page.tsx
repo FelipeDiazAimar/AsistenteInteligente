@@ -46,7 +46,7 @@ export default function AdminDashboard() {
       setIsAdmin(userIsAdmin);
 
       if (!userIsAdmin) {
-        router.push('/admin/add-notes');
+        router.push('/resources/apuntes');
         return;
       }
     }
@@ -96,7 +96,7 @@ export default function AdminDashboard() {
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-foreground">Panel de Administración</h1>
                 <p className="text-sm text-muted-foreground">
-                  Bienvenido, {user?.name ?? 'visitante (vista demo)'}
+                  Bienvenido, {user?.name ?? 'visitante'}
                 </p>
               </div>
             </div>
@@ -129,9 +129,9 @@ export default function AdminDashboard() {
           <Alert className="mb-6 border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-100">
             <Info className="h-4 w-4" />
             <AlertDescription>
-              <strong>Vista previa en modo demo:</strong> las cifras provienen de los datos
-              locales de demostración y no requieren base de datos. Para gestionar datos
-              reales, inicia sesión con una cuenta administradora.
+              <strong>Vista previa:</strong> las cifras provienen de los datos
+              locales disponibles y no requieren base de datos. Para gestionar datos
+              completos, inicia sesión con una cuenta administradora.
             </AlertDescription>
           </Alert>
         )}
@@ -245,27 +245,27 @@ function OverviewSection() {
   if (demo) {
     const demoCards = [
       {
-        title: 'Apuntes demo',
+        title: 'Apuntes',
         value: DEMO_NOTES.length,
         description: 'Apuntes precargados disponibles sin base de datos',
         icon: FileText,
       },
       {
-        title: 'Recursos demo',
+        title: 'Recursos',
         value: DEMO_RESOURCES.length,
         description: 'Guías, videos y material de ejemplo',
         icon: BookOpen,
       },
       {
-        title: 'Preguntas demo',
+        title: 'Preguntas',
         value: DEMO_QUIZ.length,
         description: 'Preguntas de autoevaluación precargadas',
         icon: HelpCircle,
       },
       {
-        title: 'Sesiones demo',
+        title: 'Sesiones',
         value: 0,
-        description: 'Sin seguimiento de sesiones en modo demo',
+        description: 'Sin sesiones registradas por el momento',
         icon: Activity,
       },
     ];
@@ -275,7 +275,7 @@ function OverviewSection() {
         <Card className="border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40">
           <CardContent className="pt-6">
             <p className="text-sm text-blue-900 dark:text-blue-100">
-              Cifras calculadas con los datos locales de demostración (apuntes, recursos y
+              Cifras calculadas con los datos locales disponibles (apuntes, recursos y
               autoevaluación). No se consultó ninguna API.
             </p>
           </CardContent>
