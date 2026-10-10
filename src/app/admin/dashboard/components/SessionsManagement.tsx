@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
+import {
   Table,
   TableBody,
   TableCell,
@@ -14,14 +14,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  Activity, 
-  Trash2, 
+import {
+  Activity,
+  Trash2,
   Loader2,
   Clock,
   User,
-  LogOut
+  LogOut,
+  Info
 } from "lucide-react";
+import { isDemoMode } from '@/lib/demo';
 
 interface Session {
   id: string;
@@ -35,46 +37,71 @@ interface Session {
 }
 
 export default function SessionsManagement() {
+  const demo = isDemoMode();
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!demo);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [cleaningUp, setCleaningUp] = useState(false);
 
-  useEffect(() => {
-    fetchSessions();
-    // Refrescar cada 5 segundos para mostrar tiempo restante en tiempo real
-    const interval = setInterval(fetchSessions, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchSessions = async () => {
+  const fetchSessions = useCallback(async () => {
+    // En modo demo no hay seguimiento de sesiones: estado vacío sin llamar a la API.
+    if (demo) {
+      setSessions([]);
+      setLoading(false);
+      return;
+    }
     try {
       const response = await fetch('/api/admin/sessions', {
         credentials: 'include', // Asegurar que las cookies se envíen
       });
-      
+
+      if (!response.ok) {
+        throw new Error(`La API respondió con estado ${response.status}`);
+      }
+
       const data = await response.json();
-      
-      if (data.success) {
+
+      if (data.success && Array.isArray(data.sessions)) {
         setSessions(data.sessions);
       } else {
-        setError(`Error al cargar sesiones: ${data.error || 'Unknown error'}`);
+        setSessions([]);
+        setError(`No se pudieron cargar las sesiones: ${data.error || 'respuesta no válida'}`);
       }
     } catch (error) {
-      setError(`Error de conexión: ${error}`);
+      console.error('Error al cargar sesiones:', error);
+      setSessions([]);
+      setError('No se pudo conectar con el servidor. Intenta de nuevo más tarde.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [demo]);
+
+  useEffect(() => {
+    fetchSessions();
+    // En modo demo no se sondea la API.
+    if (demo) return;
+    // Refrescar cada 5 segundos para mostrar tiempo restante en tiempo real
+    const interval = setInterval(fetchSessions, 5000);
+    return () => clearInterval(interval);
+  }, [fetchSessions, demo]);
 
   const handleCloseSession = async (sessionId: string) => {
+    if (demo) {
+      setError('El cierre de sesiones no está disponible en modo demo.');
+      return;
+    }
     if (!confirm('¿Estás seguro de que quieres cerrar esta sesión?')) return;
 
     try {
       const response = await fetch(`/api/admin/sessions?id=${sessionId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include',
       });
+
+      if (!response.ok) {
+        throw new Error(`La API respondió con estado ${response.status}`);
+      }
 
       const data = await response.json();
 
@@ -85,11 +112,16 @@ export default function SessionsManagement() {
         setError(data.error || 'Error al cerrar sesión');
       }
     } catch (error) {
-      setError('Error de conexión');
+      console.error('Error al cerrar sesión:', error);
+      setError('Error de conexión. Intenta de nuevo más tarde.');
     }
   };
 
   const handleCleanExpiredSessions = async () => {
+    if (demo) {
+      setError('La limpieza de sesiones no está disponible en modo demo.');
+      return;
+    }
     if (!confirm('¿Estás seguro de que quieres limpiar todas las sesiones expiradas?')) return;
 
     setCleaningUp(true);
@@ -99,16 +131,21 @@ export default function SessionsManagement() {
         credentials: 'include'
       });
 
+      if (!response.ok) {
+        throw new Error(`La API respondió con estado ${response.status}`);
+      }
+
       const data = await response.json();
 
       if (data.success) {
-        setSuccess(`${data.deletedCount} sesiones expiradas eliminadas`);
+        setSuccess(`${data.deletedCount ?? 0} sesiones expiradas eliminadas`);
         fetchSessions();
       } else {
         setError(data.error || 'Error al limpiar sesiones');
       }
     } catch (error) {
-      setError('Error de conexión');
+      console.error('Error al limpiar sesiones:', error);
+      setError('Error de conexión. Intenta de nuevo más tarde.');
     } finally {
       setCleaningUp(false);
     }
@@ -128,14 +165,14 @@ export default function SessionsManagement() {
     const now = new Date();
     const expiry = new Date(expiresAt);
     const diffMs = expiry.getTime() - now.getTime();
-    
+
     if (diffMs <= 0) {
       return 'Expirada';
     }
-    
+
     const diffMinutes = Math.floor(diffMs / (1000 * 60));
     const diffSeconds = Math.floor((diffMs % (1000 * 60)) / 1000);
-    
+
     if (diffMinutes > 0) {
       return `${diffMinutes}m ${diffSeconds}s`;
     } else {
@@ -163,6 +200,16 @@ export default function SessionsManagement() {
 
   return (
     <div className="space-y-4 md:space-y-6">
+      {demo && (
+        <Alert className="border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-100">
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            Modo demo: el seguimiento de sesiones requiere base de datos y no está
+            disponible aquí. Se muestra un estado vacío.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Estadísticas rápidas */}
       <div className="grid grid-cols-3 md:grid-cols-3 gap-2 md:gap-4">
         <Card>
@@ -174,7 +221,7 @@ export default function SessionsManagement() {
             <div className="text-lg md:text-2xl font-bold text-green-600">{activeSessions.length}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-3 md:p-4">
             <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
@@ -184,7 +231,7 @@ export default function SessionsManagement() {
             <div className="text-lg md:text-2xl font-bold text-muted-foreground">{expiredSessions.length}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-3 md:p-4">
             <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
@@ -202,14 +249,18 @@ export default function SessionsManagement() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Activity className="h-5 w-5" />
-              <CardTitle>Sesiones Activas</CardTitle>
+              <div>
+                <CardTitle>Sesiones Activas</CardTitle>
+                <CardDescription>Profesores conectados actualmente</CardDescription>
+              </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
-              <Button 
-                onClick={handleCleanExpiredSessions} 
-                variant="outline" 
+              <Button
+                onClick={handleCleanExpiredSessions}
+                variant="outline"
                 size="sm"
-                disabled={cleaningUp}
+                disabled={cleaningUp || demo}
+                title={demo ? 'No disponible en modo demo' : undefined}
                 className="w-full sm:w-auto"
               >
                 {cleaningUp ? (
@@ -219,7 +270,7 @@ export default function SessionsManagement() {
                 )}
                 Limpiar Expiradas
               </Button>
-              <Button onClick={fetchSessions} variant="outline" size="sm" className="w-full sm:w-auto">
+              <Button onClick={fetchSessions} variant="outline" size="sm" disabled={demo} title={demo ? 'No disponible en modo demo' : undefined} className="w-full sm:w-auto">
                 Actualizar
               </Button>
             </div>
@@ -236,13 +287,15 @@ export default function SessionsManagement() {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          
+
           {activeSessions.length === 0 ? (
             <div className="text-center py-8">
               <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No hay sesiones activas</h3>
-              <p className="text-muted-foreground">
-                Ningún profesor está conectado en este momento.
+              <p className="text-muted-foreground text-sm sm:text-base">
+                {demo
+                  ? 'En modo demo no se registran sesiones.'
+                  : 'Ningún profesor está conectado en este momento.'}
               </p>
             </div>
           ) : (
@@ -277,10 +330,10 @@ export default function SessionsManagement() {
                             <TableCell>{formatDate(session.expires_at)}</TableCell>
                             <TableCell>
                               <span className={`font-mono text-sm ${
-                                getTimeRemaining(session.expires_at) === 'Expirada' 
-                                  ? 'text-red-600' 
+                                getTimeRemaining(session.expires_at) === 'Expirada'
+                                  ? 'text-red-600'
                                   : getTimeRemaining(session.expires_at).includes('m') && parseInt(getTimeRemaining(session.expires_at)) < 5
-                                    ? 'text-orange-600' 
+                                    ? 'text-orange-600'
                                     : 'text-green-600'
                               }`}>
                                 {getTimeRemaining(session.expires_at)}
@@ -326,18 +379,18 @@ export default function SessionsManagement() {
                           <LogOut className="h-4 w-4" />
                         </Button>
                       </div>
-                      
+
                       {/* Professor info */}
                       <div>
                         <h3 className="font-medium text-sm">{session.professor_name}</h3>
                         <p className="text-xs text-muted-foreground line-clamp-1">{session.professor_email}</p>
                       </div>
-                      
+
                       {/* Department */}
                       <div>
                         <p className="text-xs"><span className="font-medium">Depto:</span> {session.department}</p>
                       </div>
-                      
+
                       {/* Time info in grid */}
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div>
@@ -349,15 +402,15 @@ export default function SessionsManagement() {
                           <span className="text-muted-foreground">{formatDate(session.expires_at)}</span>
                         </div>
                       </div>
-                      
+
                       {/* Time remaining - prominent */}
                       <div className="text-center p-2 bg-muted/50 rounded">
                         <span className="text-xs font-medium block">Tiempo restante</span>
                         <span className={`font-mono text-sm font-bold ${
-                          getTimeRemaining(session.expires_at) === 'Expirada' 
-                            ? 'text-red-600' 
+                          getTimeRemaining(session.expires_at) === 'Expirada'
+                            ? 'text-red-600'
                             : getTimeRemaining(session.expires_at).includes('m') && parseInt(getTimeRemaining(session.expires_at)) < 5
-                              ? 'text-orange-600' 
+                              ? 'text-orange-600'
                               : 'text-green-600'
                         }`}>
                           {getTimeRemaining(session.expires_at)}
@@ -432,18 +485,18 @@ export default function SessionsManagement() {
                         Expirada
                       </Badge>
                     </div>
-                    
+
                     {/* Professor info */}
                     <div>
                       <h3 className="font-medium text-sm">{session.professor_name}</h3>
                       <p className="text-xs text-muted-foreground line-clamp-1">{session.professor_email}</p>
                     </div>
-                    
+
                     {/* Department */}
                     <div>
                       <p className="text-xs"><span className="font-medium">Depto:</span> {session.department}</p>
                     </div>
-                    
+
                     {/* Time info in grid */}
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div>

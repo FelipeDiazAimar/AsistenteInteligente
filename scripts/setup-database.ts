@@ -1,6 +1,19 @@
-// Cargar variables de entorno primero
+// Cargar variables de entorno primero (.env + .env.local tiene prioridad)
 import { config } from 'dotenv';
-config({ path: '.env.local' });
+config();
+config({ path: '.env.local', override: true });
+
+// Modo demo: este script requiere Supabase. Si la app está en modo demo
+// (NEXT_PUBLIC_DEMO_MODE distinto de 'false', por defecto true) o faltan las
+// credenciales, se omite sin error para no romper la demo.
+const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE !== 'false';
+if (isDemoMode || !process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
+  console.log(
+    'modo demo: omitido (setup-database sin SUPABASE_URL/SUPABASE_ANON_KEY). ' +
+      'La app usa datos locales en modo demo. Para modo real: NEXT_PUBLIC_DEMO_MODE=false + credenciales en .env.local.'
+  );
+  process.exit(0);
+}
 
 import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';

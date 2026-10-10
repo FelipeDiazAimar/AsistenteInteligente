@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, LogIn, GraduationCap } from "lucide-react";
+import { Loader2, LogIn, GraduationCap, Info } from "lucide-react";
 import { ThemeToggleButton } from "@/components/theme-toggle-button";
+import { isDemoMode, DEMO_ADMIN } from "@/lib/demo";
 
 // Componente que usa useSearchParams debe estar separado
 function LoginForm() {
@@ -16,12 +17,20 @@ function LoginForm() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectPath = searchParams.get('redirect') || '/admin/add-notes';
   const sessionExpired = searchParams.get('expired') === 'true';
   const networkError = searchParams.get('error') === 'network';
+  // NEXT_PUBLIC_DEMO_MODE se inyecta en build: en cliente refleja el modo demo.
+  const demoMode = isDemoMode();
+
+  const fillDemoCredentials = () => {
+    setEmail(DEMO_ADMIN.email);
+    setPassword(DEMO_ADMIN.password);
+    setError('');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +38,7 @@ function LoginForm() {
     setError('');
 
     try {
+      // Flujo real de autenticación: siempre contra la API.
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -60,7 +70,7 @@ function LoginForm() {
       <div className="absolute top-4 right-4">
         <ThemeToggleButton />
       </div>
-      
+
       <Card className="w-full max-w-md shadow-lg border-border">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
@@ -73,8 +83,19 @@ function LoginForm() {
             Ingresa tus credenciales para acceder
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent>
+          {demoMode && (
+            <Alert className="mb-4 border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-100">
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                Estás en <strong>modo demo</strong> (sin base de datos). El acceso usa el flujo real de
+                autenticación (<span className="font-mono text-xs">/api/auth/login</span>).
+                Ingresá con las credenciales demo de abajo.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {sessionExpired && (
             <Alert className="mb-4 border-orange-200 bg-orange-50 text-orange-800">
               <AlertDescription>
@@ -82,7 +103,7 @@ function LoginForm() {
               </AlertDescription>
             </Alert>
           )}
-          
+
           {networkError && (
             <Alert variant="destructive" className="mb-4">
               <AlertDescription>
@@ -90,14 +111,14 @@ function LoginForm() {
               </AlertDescription>
             </Alert>
           )}
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -108,9 +129,10 @@ function LoginForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
+                autoComplete="email"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="password">Contraseña</Label>
               <Input
@@ -121,12 +143,13 @@ function LoginForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={isLoading}
+                autoComplete="current-password"
               />
             </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full" 
+
+            <Button
+              type="submit"
+              className="w-full"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -142,17 +165,31 @@ function LoginForm() {
               )}
             </Button>
           </form>
-          
+
           <div className="mt-6 text-center text-sm text-muted-foreground">
-            <p>Credenciales de prueba:</p>
-            <div className="font-mono text-xs bg-muted p-2 rounded mt-2 space-y-1 text-muted-foreground">
+            <p className="font-medium">Credenciales demo (solo visuales):</p>
+            <div className="font-mono text-xs bg-muted p-3 rounded mt-2 space-y-1 text-muted-foreground text-left">
               <div>
-                <strong>Admin:</strong> admin1@admin1.com | admin1
+                <strong>Email:</strong> {DEMO_ADMIN.email}
               </div>
               <div>
-                <strong>Profesor:</strong> admin@university.edu | admin123
+                <strong>Contraseña:</strong> {DEMO_ADMIN.password}
               </div>
             </div>
+            <p className="mt-2 text-xs">
+              Referencia informativa del modo demo. El inicio de sesión se valida
+              con el flujo real de autenticación del servidor.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-2"
+              onClick={fillDemoCredentials}
+              disabled={isLoading}
+            >
+              Autocompletar credenciales demo
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -169,7 +206,7 @@ export default function AdminLoginPage() {
         <div className="absolute top-4 right-4">
           <ThemeToggleButton />
         </div>
-        
+
         <Card className="w-full max-w-md shadow-lg border-border">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">

@@ -2,11 +2,12 @@
 "use client";
 
 import { useState, useRef, type ChangeEvent, useEffect, type FormEvent } from 'react';
+import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Upload, Send, MessageCircle, User, Bot, FileSearch, XCircle, FileCheck2 } from "lucide-react";
+import { Upload, Send, MessageCircle, User, Bot, FileSearch, XCircle, FileCheck2, ArrowRight, BookOpen, ClipboardCheck, FilePlus2, Sparkles } from "lucide-react";
 import { cn } from '@/lib/utils';
 
 interface ChatMessage {
@@ -33,6 +34,13 @@ const exampleMessages: ChatMessage[] = [
 ];
 
 
+const SUGGESTED_QUESTIONS = [
+  '¿Qué es la hipertensión arterial y cómo se previene?',
+  '¿Qué es la diabetes tipo 2 y cuál es su tratamiento?',
+  '¿Qué vacunas necesita un adulto?',
+];
+
+
 export default function HomePage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [pdfVisualUrl, setPdfVisualUrl] = useState<string | null>(null); // For iframe src
@@ -44,6 +52,8 @@ export default function HomePage() {
   const [chatInput, setChatInput] = useState('');
   const [isLoadingChat, setIsLoadingChat] = useState(false);
   const [hasUserSentFirstMessage, setHasUserSentFirstMessage] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [lastFailedQuestion, setLastFailedQuestion] = useState<string | null>(null);
 
   // Función para hacer scroll al final
   const scrollToBottom = () => {
@@ -149,10 +159,9 @@ export default function HomePage() {
     scrollToBottom();
   }, [messages, isLoadingChat]); // Incluir isLoadingChat en las dependencias
 
-  const handleSendMessage = async (event?: FormEvent<HTMLFormElement>) => {
-    if (event) event.preventDefault();
-    const currentMessageContent = chatInput.trim();
-    if (!currentMessageContent) return;
+  const sendQuestion = async (rawQuestion: string) => {
+    const currentMessageContent = rawQuestion.trim();
+    if (!currentMessageContent || isLoadingChat) return;
 
     const userMessageForState: ChatMessage = {
       id: Date.now().toString(),
@@ -177,6 +186,7 @@ export default function HomePage() {
     }
 
     setChatInput('');
+    setChatError(null);
     setIsLoadingChat(true);
 
     // Hacer scroll después de agregar el mensaje del usuario
@@ -228,6 +238,7 @@ export default function HomePage() {
         content: result.answer,
       };
       setMessages(prev => [...prev, assistantMessage]);
+      setLastFailedQuestion(null);
 
       // Hacer scroll después de agregar la respuesta del asistente
       setTimeout(scrollToBottom, 100);
@@ -240,6 +251,8 @@ export default function HomePage() {
         content: 'Lo siento, ha ocurrido un error al procesar tu solicitud.',
       };
       setMessages(prev => [...prev, errorMessage]);
+      setChatError('No se pudo obtener respuesta. Revisa tu conexión e inténtalo de nuevo.');
+      setLastFailedQuestion(currentMessageContent);
       // Hacer scroll después de agregar mensaje de error
       setTimeout(scrollToBottom, 100);
     } finally {
@@ -249,31 +262,167 @@ export default function HomePage() {
     }
   };
 
+  const handleSendMessage = async (event?: FormEvent<HTMLFormElement>) => {
+    if (event) event.preventDefault();
+    await sendQuestion(chatInput);
+  };
+
+  const handleSuggestedQuestion = async (question: string) => {
+    await sendQuestion(question);
+  };
+
+  const handleRetry = async () => {
+    if (!lastFailedQuestion) return;
+    await sendQuestion(lastFailedQuestion);
+  };
+
 
   return (
-    <div className="flex flex-col gap-6 sm:gap-8 p-4 sm:p-6 max-w-7xl mx-auto">
-      <section className="text-center">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight font-headline text-primary">
-          Bienvenido a Tu Compañero de Atención Primaria
-        </h1>
-        <p className="mt-4 text-base sm:text-lg md:text-xl text-muted-foreground px-4">
-          Aprende, consulta y mejora tus conocimientos de atención primaria con asistencia de IA.
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 p-4 sm:gap-10 sm:p-6">
+      {/* Hero */}
+      <section aria-labelledby="titulo-inicio" className="mx-auto w-full max-w-3xl text-center">
+        <p className="inline-flex items-center gap-1.5 rounded-full border bg-muted/60 px-3 py-1 text-xs font-medium text-muted-foreground sm:text-sm">
+          <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" />
+          Sin cuenta · Sin configuración · Funciona en modo demo
         </p>
+        <h1 id="titulo-inicio" className="mt-4 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+          Tu Compañero de <span className="underline decoration-primary decoration-4 underline-offset-4">Atención Primaria</span>
+        </h1>
+        <p className="mx-auto mt-4 max-w-2xl text-pretty text-sm text-muted-foreground sm:text-base md:text-lg">
+          Aprende, consulta y mejora tus conocimientos de atención primaria con asistencia de IA.
+          Sube un apunte en PDF, practica con autoevaluaciones o explora los recursos.
+        </p>
+        <div className="mt-6 flex flex-col items-center justify-center gap-2 sm:flex-row sm:gap-3">
+          <Button asChild size="lg" className="w-full sm:w-auto">
+            <Link href="#asistente">
+              <MessageCircle className="mr-2 h-4 w-4" aria-hidden="true" />
+              Probar el chat
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
+            <Link href="/resources">
+              <BookOpen className="mr-2 h-4 w-4" aria-hidden="true" />
+              Explorar recursos
+            </Link>
+          </Button>
+        </div>
       </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      {/* Accesos directos */}
+      <nav aria-label="Secciones principales" className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-4">
+        <Link href="#asistente" className="group block rounded-xl focus-visible:outline-none">
+          <Card className="flex h-full flex-col shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg group-hover:border-primary/50">
+            <CardHeader className="pb-2">
+              <div className="mb-3 w-fit rounded-full bg-primary/15 p-3">
+                <MessageCircle className="h-5 w-5 text-primary" aria-hidden="true" />
+              </div>
+              <CardTitle className="text-base sm:text-lg">Chat de IA</CardTitle>
+              <CardDescription>Pregunta y obtén respuestas instantáneas. Adjunta un PDF como contexto.</CardDescription>
+            </CardHeader>
+            <CardFooter className="mt-auto pt-2">
+              <span className="inline-flex items-center text-sm font-semibold text-primary">
+                Ir al chat
+                <ArrowRight className="ml-1.5 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
+              </span>
+            </CardFooter>
+          </Card>
+        </Link>
+
+        <Link href="/admin/add-notes" className="group block rounded-xl focus-visible:outline-none">
+          <Card className="flex h-full flex-col shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg group-hover:border-primary/50">
+            <CardHeader className="pb-2">
+              <div className="mb-3 w-fit rounded-full bg-primary/15 p-3">
+                <FilePlus2 className="h-5 w-5 text-primary" aria-hidden="true" />
+              </div>
+              <CardTitle className="text-base sm:text-lg">Apuntes</CardTitle>
+              <CardDescription>Sube y organiza tus apuntes en PDF para estudiar y consultar.</CardDescription>
+            </CardHeader>
+            <CardFooter className="mt-auto pt-2">
+              <span className="inline-flex items-center text-sm font-semibold text-primary">
+                Agregar apuntes
+                <ArrowRight className="ml-1.5 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
+              </span>
+            </CardFooter>
+          </Card>
+        </Link>
+
+        <Link href="/self-assessment" className="group block rounded-xl focus-visible:outline-none">
+          <Card className="flex h-full flex-col shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg group-hover:border-primary/50">
+            <CardHeader className="pb-2">
+              <div className="mb-3 w-fit rounded-full bg-primary/15 p-3">
+                <ClipboardCheck className="h-5 w-5 text-primary" aria-hidden="true" />
+              </div>
+              <CardTitle className="text-base sm:text-lg">Autoevaluación</CardTitle>
+              <CardDescription>Pon a prueba lo aprendido con cuestionarios interactivos.</CardDescription>
+            </CardHeader>
+            <CardFooter className="mt-auto pt-2">
+              <span className="inline-flex items-center text-sm font-semibold text-primary">
+                Evaluarme
+                <ArrowRight className="ml-1.5 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
+              </span>
+            </CardFooter>
+          </Card>
+        </Link>
+
+        <Link href="/resources" className="group block rounded-xl focus-visible:outline-none">
+          <Card className="flex h-full flex-col shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg group-hover:border-primary/50">
+            <CardHeader className="pb-2">
+              <div className="mb-3 w-fit rounded-full bg-primary/15 p-3">
+                <BookOpen className="h-5 w-5 text-primary" aria-hidden="true" />
+              </div>
+              <CardTitle className="text-base sm:text-lg">Recursos</CardTitle>
+              <CardDescription>Guías, videos, imágenes y artículos seleccionados.</CardDescription>
+            </CardHeader>
+            <CardFooter className="mt-auto pt-2">
+              <span className="inline-flex items-center text-sm font-semibold text-primary">
+                Ver recursos
+                <ArrowRight className="ml-1.5 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
+              </span>
+            </CardFooter>
+          </Card>
+        </Link>
+      </nav>
+
+      <section id="asistente" aria-labelledby="titulo-asistente" className="scroll-mt-24">
+        <div className="mb-4 text-center sm:mb-6">
+          <h2 id="titulo-asistente" className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+            Asistente y visor de apuntes
+          </h2>
+          <p className="mx-auto mt-2 max-w-2xl text-sm text-muted-foreground sm:text-base">
+            Escribe tu pregunta abajo o carga un PDF para usarlo como contexto del chat.
+          </p>
+        </div>
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
         {/* AI Chat Assistant Column */}
         <Card className="flex flex-col shadow-lg rounded-xl h-[500px] sm:h-[600px] lg:h-[700px]">
           <CardHeader className="flex-shrink-0 border-b">
             <CardTitle className="flex items-center gap-2 font-headline text-lg sm:text-xl">
               <MessageCircle className="text-accent h-5 w-5 sm:h-6 sm:w-6" />
               Asistente de Chat IA
+              <span className="ml-auto rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-100">
+                Modo demo
+              </span>
             </CardTitle>
-            <CardDescription className="text-sm">Haz preguntas y obtén información instantánea sobre temas de atención primaria.</CardDescription>
+            <CardDescription className="text-sm">Haz preguntas y obtén información instantánea sobre temas de atención primaria. Respuestas de demostración con fines educativos.</CardDescription>
+            <div className="mt-2 flex flex-wrap gap-2" aria-label="Preguntas sugeridas">
+              {SUGGESTED_QUESTIONS.map((q) => (
+                <Button
+                  key={q}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  disabled={isLoadingChat}
+                  onClick={() => handleSuggestedQuestion(q)}
+                >
+                  {q}
+                </Button>
+              ))}
+            </div>
              {pdfDataUri && selectedFile && (
-              <div className="mt-2 p-2 text-xs sm:text-sm bg-green-100 text-green-700 rounded-md flex items-center gap-2">
-                <FileCheck2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                <span className="truncate">PDF: "{selectedFile.name}" cargado y se usará como contexto.</span>
+              <div className="mt-2 flex items-center gap-2 rounded-md border border-green-200 bg-green-100 p-2 text-xs text-green-800 sm:text-sm dark:border-green-800 dark:bg-green-950 dark:text-green-200">
+                <FileCheck2 className="h-4 w-4 flex-shrink-0 sm:h-5 sm:w-5" aria-hidden="true" />
+                <span className="truncate">PDF: &ldquo;{selectedFile.name}&rdquo; cargado y se usará como contexto.</span>
               </div>
             )}
           </CardHeader>
@@ -288,8 +437,8 @@ export default function HomePage() {
                       </div>
                     )}
                     <div className={cn(
-                      "p-2 sm:p-3 rounded-lg shadow-sm max-w-[85%] break-words",
-                      msg.role === 'user' ? "bg-accent/80 text-accent-foreground" : "bg-muted text-foreground"
+                      "max-w-[85%] break-words rounded-lg p-2 shadow-sm sm:p-3",
+                      msg.role === 'user' ? "bg-primary text-primary-foreground" : "border bg-muted text-foreground"
                     )}>
                       <p className="text-xs sm:text-sm whitespace-pre-wrap">{msg.content}</p>
                     </div>
@@ -305,7 +454,7 @@ export default function HomePage() {
                     <div className="p-1.5 sm:p-2 bg-primary/20 rounded-full flex-shrink-0">
                       <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
-                    <div className="bg-muted p-2 sm:p-3 rounded-lg shadow-sm max-w-[75%]">
+                    <div className="bg-muted max-w-[75%] rounded-lg border p-2 shadow-sm sm:p-3">
                       <p className="text-xs sm:text-sm animate-pulse">Escribiendo...</p>
                     </div>
                   </div>
@@ -314,7 +463,22 @@ export default function HomePage() {
             </ScrollArea>
           </CardContent>
           <CardFooter className="border-t p-3 sm:p-4 flex-shrink-0">
-            <form onSubmit={handleSendMessage} className="flex w-full items-center gap-2">
+            <div className="flex w-full flex-col gap-2">
+              {chatError && (
+                <div className="flex items-center justify-between gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-2 text-xs sm:text-sm">
+                  <span className="text-destructive">{chatError}</span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isLoadingChat || !lastFailedQuestion}
+                    onClick={handleRetry}
+                  >
+                    Reintentar
+                  </Button>
+                </div>
+              )}
+              <form onSubmit={handleSendMessage} className="flex w-full items-center gap-2">
               <Input 
                 type="text" 
                 placeholder="Escribe tu pregunta..." 
@@ -327,6 +491,7 @@ export default function HomePage() {
                 <Send className="h-4 w-4" />
               </Button>
             </form>
+            </div>
           </CardFooter>
         </Card>
 
@@ -406,6 +571,7 @@ export default function HomePage() {
           </Card>
         </div>
       </div>
+      </section>
     </div>
   );
 }

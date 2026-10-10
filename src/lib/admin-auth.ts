@@ -1,5 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getPostgresClient } from './postgres';
+import { DEMO_SESSION_TOKEN } from './auth';
+import { isDemoMode, DEMO_ADMIN } from './demo';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-change-in-production';
@@ -14,6 +16,8 @@ export interface AdminUser {
 
 // Verificar si un usuario es administrador
 export async function isUserAdmin(email: string): Promise<boolean> {
+  // MODO DEMO: el admin demo siempre es admin (path real intacto abajo).
+  if (isDemoMode() && email?.toLowerCase().trim() === DEMO_ADMIN.email) return true;
   return email === 'admin1@admin1.com' || email === 'admin@university.edu';
 }
 
@@ -22,6 +26,17 @@ export async function getUserFromRequest(request: NextRequest): Promise<AdminUse
   try {
     const token = request.cookies.get('auth-token')?.value || request.cookies.get('session_token')?.value;
     if (!token) return null;
+
+    // MODO DEMO: usuario admin sin JWT ni Postgres.
+    if (isDemoMode() && token === DEMO_SESSION_TOKEN) {
+      return {
+        id: 'demo-admin',
+        name: DEMO_ADMIN.name,
+        email: DEMO_ADMIN.email,
+        department: 'Demo',
+        isAdmin: true,
+      };
+    }
 
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     const professorId = decoded.professorId || decoded.userId; // Compatibilidad con ambos formatos

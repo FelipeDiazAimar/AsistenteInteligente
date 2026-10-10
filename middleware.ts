@@ -1,78 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateSession } from '@/lib/auth';
-import { isUserAdmin } from '@/lib/admin-auth';
 
-export async function middleware(request: NextRequest) {
+// MODO DEMO (contrato: src/lib/demo.ts) — constantes inline a propósito.
+// El middleware corre en Edge runtime y NO puede importar módulos Node
+// (pg, bcryptjs, jsonwebtoken) vía @/lib/auth o @/lib/admin-auth.
+// Por eso no se importa nada de @/lib/* aquí.
+const DEMO_SESSION_TOKEN = 'demo-admin-session-v1';
+const DEMO_ADMIN_EMAIL = 'admin@demo.local';
+const DEMO_ADMIN_NAME = 'Admin Demo';
+
+function isDemoMode(): boolean {
+  // NEXT_PUBLIC_* se inlina en Edge; todo valor distinto de 'false' = demo.
+  return process.env.NEXT_PUBLIC_DEMO_MODE !== 'false';
+}
+
+export function middleware(request: NextRequest) {
   // Rutas que requieren autenticación
   const protectedPaths = ['/admin'];
   const adminPaths = ['/admin/dashboard'];
-  
+
   const { pathname } = request.nextUrl;
-  
+
   // Verificar si la ruta requiere autenticación
-  const requiresAuth = protectedPaths.some(path => pathname.startsWith(path));
-  const requiresAdmin = adminPaths.some(path => pathname.startsWith(path));
-  
+  const requiresAuth = protectedPaths.some((path) => pathname.startsWith(path));
+  const requiresAdmin = adminPaths.some((path) => pathname.startsWith(path));
+
   if (requiresAuth) {
     // Obtener token de las cookies - verificar ambos nombres
-    const token = request.cookies.get('auth-token')?.value || request.cookies.get('session_token')?.value;
-    
+    const token =
+      request.cookies.get('auth-token')?.value || request.cookies.get('session_token')?.value;
+
     if (!token) {
       // Redirigir a login si no hay token
       const loginUrl = new URL('/admin/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
     }
-    
-    try {
-      // Validar sesión
-      const professor = await validateSession(token);
-      
-      if (!professor) {
-        // Token inválido o expirado, redirigir a login
-        const response = NextResponse.redirect(new URL('/admin/login', request.url));
-        response.cookies.delete('auth-token');
-        response.cookies.delete('session_token');
-        return response;
-      }
 
-      // Verificar si es ruta de admin y si el usuario es admin
-      if (requiresAdmin) {
-        const userIsAdmin = await isUserAdmin(professor.email);
-        if (!userIsAdmin) {
-          // No es admin, redirigir al panel normal
-          return NextResponse.redirect(new URL('/admin/add-notes', request.url));
-        }
-      }
-
-      // Si el usuario es admin y está accediendo a /admin/add-notes, redirigir al dashboard
+    // MODO DEMO: sesión demo válida sin JWT ni Postgres. El usuario demo es
+    // admin, así que se aplican las mismas reglas de redirección que el path real.
+    if (isDemoMode() && token === DEMO_SESSION_TOKEN) {
       if (pathname === '/admin/add-notes') {
-        const userIsAdmin = await isUserAdmin(professor.email);
-        if (userIsAdmin) {
-          return NextResponse.redirect(new URL('/admin/dashboard', request.url));
-        }
+        return NextResponse.redirect(new URL('/admin/dashboard', request.url));
       }
-      
-      // Usuario autenticado, continuar
       const response = NextResponse.next();
-      
-      // Agregar información del profesor a los headers para uso en server components
-      response.headers.set('x-professor-id', professor.id);
-      response.headers.set('x-professor-name', professor.name);
-      response.headers.set('x-professor-email', professor.email);
-      response.headers.set('x-professor-is-admin', (await isUserAdmin(professor.email)).toString());
-      
-      return response;
-      
-    } catch (error) {
-      console.error('Error en middleware:', error);
-      const response = NextResponse.redirect(new URL('/admin/login', request.url));
-      response.cookies.delete('auth-token');
-      response.cookies.delete('session_token');
+      response.headers.set('x-professor-id', 'demo-admin');
+      response.headers.set('x-professor-name', DEMO_ADMIN_NAME);
+      response.headers.set('x-professor-email', DEMO_ADMIN_EMAIL);
+      response.headers.set('x-professor-is-admin', 'true');
       return response;
     }
+
+    // Path real (no-demo): en Edge no se puede validar JWT ni consultar
+    // Postgres. Se deja pasar y la validación definitiva ocurre en
+    // server components / API routes (runtime Node). Solo se aplica la
+    // regla conocida: si no hay token ya se redirigió arriba.
+    // Para rutas admin, la verificación fina la hace la página destino.
+    if (requiresAdmin) {
+      return NextResponse.next();
+    }
+
+    return NextResponse.next();
   }
-  
+
   return NextResponse.next();
 }
 

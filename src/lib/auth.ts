@@ -1,9 +1,28 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { getPostgresClient } from './postgres';
+import { isDemoMode, DEMO_ADMIN } from './demo';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-change-in-production';
 const JWT_EXPIRES_IN = '7d'; // 7 días
+
+// MODO DEMO: token opaco de sesión demo. No es un secreto ni un JWT:
+// solo se acepta cuando isDemoMode() es true. El path real (JWT/Postgres) no cambia.
+export const DEMO_SESSION_TOKEN = 'demo-admin-session-v1';
+
+export function isDemoSessionToken(token: string | undefined | null): boolean {
+  return !!token && token === DEMO_SESSION_TOKEN;
+}
+
+export function getDemoProfessor(): Professor {
+  return {
+    id: 'demo-admin',
+    name: DEMO_ADMIN.name,
+    email: DEMO_ADMIN.email,
+    department: 'Demo',
+    is_active: true,
+  };
+}
 
 export interface Professor {
   id: string;
@@ -55,6 +74,18 @@ export function verifyToken(token: string): { professorId: string } | null {
 
 // Autenticar profesor por email y contraseña
 export async function authenticateProfessor(email: string, password: string): Promise<AuthResult> {
+  // MODO DEMO (contrato: src/lib/demo.ts): login sin Postgres con DEMO_ADMIN.
+  if (isDemoMode()) {
+    const normalizedEmail = email?.toLowerCase().trim();
+    if (normalizedEmail === DEMO_ADMIN.email && password === DEMO_ADMIN.password) {
+      return { success: true, professor: getDemoProfessor(), token: DEMO_SESSION_TOKEN };
+    }
+    // Email demo con contraseña errónea: no se toca la base de datos.
+    if (normalizedEmail === DEMO_ADMIN.email) {
+      return { success: false, error: 'Email o contraseña incorrectos' };
+    }
+  }
+
   const client = await getPostgresClient();
   
   try {
@@ -126,6 +157,11 @@ export async function saveSession(professorId: string, token: string): Promise<v
 
 // Validar sesión por token
 export async function validateSession(token: string): Promise<Professor | null> {
+  // MODO DEMO: sesión válida sin JWT ni Postgres (solo si el modo demo sigue activo).
+  if (isDemoSessionToken(token)) {
+    return isDemoMode() ? getDemoProfessor() : null;
+  }
+
   const client = await getPostgresClient();
   
   try {
@@ -168,6 +204,11 @@ export async function validateSession(token: string): Promise<Professor | null> 
 
 // Cerrar sesión
 export async function logoutSession(token: string): Promise<boolean> {
+  // MODO DEMO: no hay sesión en base de datos que borrar.
+  if (isDemoSessionToken(token)) {
+    return true;
+  }
+
   const client = await getPostgresClient();
   
   try {

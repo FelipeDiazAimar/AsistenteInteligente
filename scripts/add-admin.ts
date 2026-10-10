@@ -1,6 +1,19 @@
-// Cargar variables de entorno primero
+// Cargar variables de entorno primero (.env + .env.local tiene prioridad)
 import { config } from 'dotenv';
-config({ path: '.env.local' });
+config();
+config({ path: '.env.local', override: true });
+
+// Modo demo: este script requiere Postgres. Si la app está en modo demo
+// (NEXT_PUBLIC_DEMO_MODE distinto de 'false', por defecto true) o falta
+// DATABASE_URL, se omite sin error para no romper la demo.
+const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE !== 'false';
+if (isDemoMode || !process.env.DATABASE_URL) {
+  console.log(
+    'modo demo: omitido (add-admin sin DATABASE_URL). ' +
+      'La app usa datos locales en modo demo. Para modo real: NEXT_PUBLIC_DEMO_MODE=false + DATABASE_URL en .env.local.'
+  );
+  process.exit(0);
+}
 
 import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';

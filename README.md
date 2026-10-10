@@ -7,6 +7,24 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4.1-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
 
+## 🧪 Modo demo (sin keys ni base de datos)
+
+La app funciona apenas instalada, sin configurar nada. Ideal para probarla y mostrarla:
+
+- **Chat** con 3 apuntes precargados (hipertensión, diabetes tipo 2, vacunación del adulto).
+- **Recursos** demo (pdf, video, artículo, imagen).
+- **Quiz** demo de 5 preguntas.
+- **Login admin**: `admin@demo.local` / `demo1234` en `/admin/login`.
+
+```bash
+npm install
+npm run dev
+```
+
+Abrir `http://localhost:9002`.
+
+**Pasar a modo real**: crear `.env.local` con `NEXT_PUBLIC_DEMO_MODE=false` más `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `JWT_SECRET` y `GOOGLE_API_KEY` / `OPENROUTER_API_KEY`; luego `npm run setup-db` y `npm run add-admin`. Detalle, limitaciones y reactivación de Render/DB/keys en [`docs/MODO-DEMO.md`](docs/MODO-DEMO.md).
+
 ## 🌟 Descripción
 
 Una aplicación web moderna diseñada para asistir a profesionales de la salud en el aprendizaje y consulta de información sobre atención primaria. Combina inteligencia artificial avanzada con una interfaz intuitiva para proporcionar respuestas precisas y recursos educativos organizados.

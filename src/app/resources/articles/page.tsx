@@ -1,130 +1,121 @@
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, Search } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
-import type { ReactNode } from "react";
-import { fetchResourcesAction, type ClientResource as AppResource } from '@/app/admin/add-notes/actions'; 
-import { Input } from "@/components/ui/input";
+import { ArrowLeft, BookOpen, Search, SearchX } from "lucide-react";
+import { DEMO_RESOURCES } from "@/lib/demo";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
-interface ResourceItem {
-  id?: string;
-  title: string;
-  description: string;
-  icon: ReactNode;
-  imageUrl?: string;
-  link: string;
-  aiHint?: string;
-  createdAt?: string; 
-}
-
-function mapAppResourceToArticleItem(resource: AppResource): ResourceItem {
-  return {
-    id: resource.id,
-    title: resource.title,
-    description: resource.description,
-    icon: <BookOpen className="h-8 w-8 text-primary" />,
-    imageUrl: resource.coverImageUrl || "https://placehold.co/300x200.png",
-    link: resource.link || resource.fileUrl || "#", 
-    aiHint: resource.aiHint,
-    createdAt: resource.createdAt,
-  };
-}
-
-export default async function ArticleResourcesPage({ searchParams }: { searchParams?: Promise<{ q?: string }> }) {
+export default async function ArticleResourcesPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ q?: string }>;
+}) {
   const params = await searchParams;
-  const searchQuery = params?.q || '';
-  let articleResources: ResourceItem[] = [];
-  let fetchError: string | null = null;
+  const searchQuery = (params?.q ?? "").trim();
+  const q = searchQuery.toLowerCase();
 
-  try {
-    const result = await fetchResourcesAction('article', searchQuery);
-    if (result.success && result.data) {
-      articleResources = result.data.map(mapAppResourceToArticleItem);
-    } else {
-      fetchError = result.error || "Error desconocido al cargar artículos.";
-    }
-  } catch (error) {
-    console.error("Error fetching article resources:", error);
-    fetchError = error instanceof Error ? error.message : "No se pudieron cargar los artículos debido a un error inesperado.";
-  }
-  
+  const recursos = (Array.isArray(DEMO_RESOURCES) ? DEMO_RESOURCES : []).filter(
+    (r) =>
+      r.tipo === "articulo" &&
+      (!q ||
+        r.titulo.toLowerCase().includes(q) ||
+        r.descripcion.toLowerCase().includes(q))
+  );
+
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-4 text-center font-headline text-primary">Artículos y Publicaciones</h1>
-      <p className="text-muted-foreground text-center mb-6">
-        Accede a investigaciones recientes, revisiones y artículos de interés en atención primaria.
+    <div className="container mx-auto px-4 py-8">
+      <Button asChild variant="ghost" size="sm" className="mb-4">
+        <Link href="/resources">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Volver a recursos
+        </Link>
+      </Button>
+
+      <h1 className="mb-4 text-center font-headline text-3xl font-bold text-primary">
+        Artículos y publicaciones
+      </h1>
+      <p className="mb-6 text-center text-muted-foreground">
+        Lecturas recomendadas para profundizar en atención primaria (contenido
+        demo).
       </p>
 
-      <form method="get" action="" className="mb-8 flex flex-col sm:flex-row gap-2 items-center max-w-xl mx-auto">
+      <form
+        method="get"
+        action=""
+        className="mx-auto mb-8 flex max-w-xl flex-col items-center gap-2 sm:flex-row"
+      >
         <Input
           type="search"
           name="q"
           defaultValue={searchQuery}
-          placeholder="Buscar artículos por título o descripción..."
+          placeholder="Buscar artículos por título o descripción…"
           className="flex-grow"
           aria-label="Buscar artículos"
         />
         <Button type="submit" className="w-full sm:w-auto">
           <Search className="h-4 w-4 sm:mr-2" />
-          <span className="sm:inline">Buscar</span>
+          <span>Buscar</span>
         </Button>
       </form>
 
-      {fetchError && (
-        <Card className="mb-6 bg-destructive/10 border-destructive">
-          <CardHeader><CardTitle className="text-destructive">Error al Cargar Recursos</CardTitle></CardHeader>
-          <CardContent><p>{fetchError}</p></CardContent>
-        </Card>
-      )}
-      {!fetchError && articleResources.length === 0 && (
-         <Card className="mb-6 bg-muted/50">
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">
-              {searchQuery 
-                ? `No se encontraron artículos para "${searchQuery}". Intenta con otra búsqueda.`
-                : "No hay artículos disponibles. Carga algunos desde la sección de administración."}
+      <p className="mb-4 text-center text-sm text-muted-foreground" aria-live="polite">
+        Mostrando {recursos.length} artículo{recursos.length === 1 ? "" : "s"}
+        {searchQuery ? ` para “${searchQuery}”` : ""}
+      </p>
+
+      {recursos.length === 0 ? (
+        <Card className="mx-auto max-w-xl bg-muted/50">
+          <CardContent className="flex flex-col items-center gap-3 px-6 py-10 text-center">
+            <span className="rounded-full bg-primary/10 p-4">
+              <SearchX className="h-8 w-8 text-primary" />
+            </span>
+            <p className="text-lg font-semibold">Sin artículos para mostrar</p>
+            <p className="text-sm text-muted-foreground">
+              {searchQuery
+                ? `No se encontraron artículos para “${searchQuery}”. Prueba con otra búsqueda.`
+                : "Aún no hay artículos en el material demo."}
             </p>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/resources">Ver todos los recursos</Link>
+            </Button>
           </CardContent>
         </Card>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {recursos.map((resource) => (
+            <Card
+              key={resource.id}
+              className="flex h-full flex-col rounded-xl shadow-lg transition-all duration-300 hover:border-primary/50 hover:shadow-2xl"
+            >
+              <CardHeader className="flex flex-row items-center gap-4 p-4">
+                <span className="rounded-full bg-primary/10 p-2.5">
+                  <BookOpen className="h-6 w-6 text-primary" />
+                </span>
+                <div>
+                  <CardTitle className="font-headline text-lg font-semibold leading-snug">
+                    {resource.titulo}
+                  </CardTitle>
+                  <div className="mt-2 flex gap-2">
+                    <Badge variant="secondary">Artículo</Badge>
+                    <Badge variant="outline">Demo</Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="flex-grow p-4 pt-0">
+                <p className="line-clamp-3 text-sm text-muted-foreground">
+                  {resource.descripcion}
+                </p>
+              </CardContent>
+              <CardFooter className="p-4 pt-0">
+                <Button type="button" variant="outline" className="w-full" disabled>
+                  Recurso de muestra
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {articleResources.map((resource) => (
-          <Link href={resource.link} key={resource.id || resource.title} legacyBehavior>
-            <a className="block hover:shadow-xl transition-shadow duration-300 rounded-xl" target={resource.link !== "#" ? "_blank": undefined} rel="noopener noreferrer">
-              <Card className="h-full flex flex-col overflow-hidden shadow-lg rounded-xl">
-                {resource.imageUrl && (
-                  <div className="relative h-48 w-full">
-                    <Image
-                      src={resource.imageUrl}
-                      alt={resource.title}
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      className="object-cover"
-                      data-ai-hint={resource.aiHint || 'research paper'}
-                    />
-                  </div>
-                )}
-                <CardHeader className="flex flex-row items-center gap-4 p-4">
-                  {resource.icon}
-                  <div>
-                    <CardTitle className="text-lg font-semibold font-headline">{resource.title}</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-grow p-4 pt-0">
-                  <p className="text-sm text-muted-foreground line-clamp-3">{resource.description}</p>
-                   {resource.createdAt && (
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Subido: {new Date(resource.createdAt).toLocaleDateString()}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            </a>
-          </Link>
-        ))}
-      </div>
     </div>
   );
 }

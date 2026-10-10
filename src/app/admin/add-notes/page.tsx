@@ -7,10 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { FilePlus2, AlertTriangle, LogOut, UploadCloud, FileText, VideoIcon, ImageIcon, Newspaper, ClipboardCheck, SkipForward, BookOpen, Trash2, Pencil, XCircle, Loader2, User, Settings, Shield } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { FilePlus2, AlertTriangle, LogOut, UploadCloud, FileText, VideoIcon, ImageIcon, Newspaper, ClipboardCheck, SkipForward, BookOpen, Trash2, Pencil, XCircle, Loader2, User, Settings, Shield, Info, StickyNote, RotateCcw } from "lucide-react";
 import { useAuth } from '@/hooks/use-auth';
 import { useSessionExpiration } from '@/hooks/use-session-expiration';
 import { useRouter } from 'next/navigation';
+import { DEMO_NOTES, isDemoMode, DEMO_ADMIN } from '@/lib/demo';
 import {
   saveResourceAction,
   fetchResourcesAction,
@@ -34,15 +36,42 @@ const resourceTypeOptions: ResourceTypeOption[] = [
   { value: 'assessment', label: 'Autoevaluación', icon: <ClipboardCheck className="h-4 w-4 mr-2" /> },
 ];
 
+// ---- Modo demo: notas locales (contrato de solo lectura + localStorage) ----
+interface DemoNote {
+  id: string;
+  titulo: string;
+  contenido: string;
+}
+
+const DEMO_NOTES_KEY = 'asistente-demo-notes-v1';
+
+function loadDemoNotes(): DemoNote[] {
+  try {
+    if (typeof window === 'undefined') return [...DEMO_NOTES];
+    const raw = window.localStorage.getItem(DEMO_NOTES_KEY);
+    if (!raw) return [...DEMO_NOTES];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [...DEMO_NOTES];
+    const valid = parsed.filter(
+      (n): n is DemoNote =>
+        !!n && typeof n.id === 'string' && typeof n.titulo === 'string' && typeof n.contenido === 'string'
+    );
+    return valid.length > 0 ? valid : [...DEMO_NOTES];
+  } catch {
+    return [...DEMO_NOTES];
+  }
+}
+
 export default function AddNotesPage() {
   const { professor, isLoading: authLoading, logout } = useAuth();
   const router = useRouter();
+  const demoMode = isDemoMode();
 
   // Hook para manejar expiración automática de sesiones
   useSessionExpiration();
 
   const [selectedResourceType, setSelectedResourceType] = useState<ResourceType | 'assessment' | ''>('');
-  const [formKey, setFormKey] = useState<string | number>(Date.now()); 
+  const [formKey, setFormKey] = useState<string | number>(Date.now());
 
   const [resourcesList, setResourcesList] = useState<Resource[]>([]);
   const [isLoadingResources, setIsLoadingResources] = useState(false);
@@ -53,9 +82,19 @@ export default function AddNotesPage() {
   const [currentEditingResource, setCurrentEditingResource] = useState<Resource | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Verificar si el usuario es admin
-  const isAdmin = professor?.email === 'admin1@admin1.com' || professor?.email === 'admin@university.edu';
-  
+  // Estado del modo demo (solo se usa cuando demoMode es true)
+  const [demoNotes, setDemoNotes] = useState<DemoNote[]>([...DEMO_NOTES]);
+  const [demoLoaded, setDemoLoaded] = useState(false);
+  const [demoTitulo, setDemoTitulo] = useState('');
+  const [demoContenido, setDemoContenido] = useState('');
+  const [demoFeedback, setDemoFeedback] = useState<{type: 'success' | 'error', text: string} | null>(null);
+
+  // Verificar si el usuario es admin (en modo demo, admin@demo.local también es admin)
+  const isAdmin =
+    professor?.email === 'admin1@admin1.com' ||
+    professor?.email === 'admin@university.edu' ||
+    (demoMode && professor?.email?.toLowerCase() === DEMO_ADMIN.email);
+
   const resourceFormCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -64,28 +103,85 @@ export default function AddNotesPage() {
     }
   }, [isEditing, currentEditingResource]);
 
+  // Cargar notas demo desde localStorage (solo cliente)
+  useEffect(() => {
+    if (!demoMode) return;
+    setDemoNotes(loadDemoNotes());
+    setDemoLoaded(true);
+  }, [demoMode]);
+
+  // Persistir notas demo en localStorage
+  useEffect(() => {
+    if (!demoMode || !demoLoaded) return;
+    try {
+      window.localStorage.setItem(DEMO_NOTES_KEY, JSON.stringify(demoNotes));
+    } catch {
+      // Si el almacenamiento falla, se sigue trabajando en memoria
+    }
+  }, [demoNotes, demoMode, demoLoaded]);
+
 
   const fetchAndSetResources = async (filter?: ResourceType | 'assessment' | 'all') => {
     setIsLoadingResources(true);
     const actualFilter = filter === 'all' ? undefined : filter;
-    const result = await fetchResourcesAction(actualFilter as ResourceType | 'assessment' | undefined);
-    if (result.success && result.data) {
-      setResourcesList(result.data);
-    } else {
-      setFeedbackMessage({ type: 'error', text: result.error || "Error cargando recursos." });
+    try {
+      const result = await fetchResourcesAction(actualFilter as ResourceType | 'assessment' | undefined);
+      if (result.success && result.data) {
+        setResourcesList(result.data);
+      } else {
+        setFeedbackMessage({ type: 'error', text: result.error || "Error cargando recursos." });
+        setResourcesList([]);
+      }
+    } catch {
+      setFeedbackMessage({ type: 'error', text: "No se pudo conectar con el servidor. Intenta de nuevo más tarde." });
       setResourcesList([]);
+    } finally {
+      setIsLoadingResources(false);
     }
-    setIsLoadingResources(false);
   };
 
   useEffect(() => {
+    if (demoMode) return;
     if (professor) {
       fetchAndSetResources(resourceFilterType);
     }
-  }, [professor, resourceFilterType]);
+  }, [professor, resourceFilterType, demoMode]);
 
   const handleLogout = async () => {
     await logout();
+  };
+
+  // ---- Acciones del modo demo (memoria + localStorage, sin servidor) ----
+  const handleAddDemoNote = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setDemoFeedback(null);
+    const titulo = demoTitulo.trim();
+    const contenido = demoContenido.trim();
+    if (!titulo || !contenido) {
+      setDemoFeedback({ type: 'error', text: 'El título y el contenido son obligatorios.' });
+      return;
+    }
+    const nueva: DemoNote = {
+      id: `demo-${Date.now()}`,
+      titulo,
+      contenido,
+    };
+    setDemoNotes((prev) => [nueva, ...prev]);
+    setDemoTitulo('');
+    setDemoContenido('');
+    setDemoFeedback({ type: 'success', text: 'Apunte guardado en modo demo (solo en tu navegador).' });
+  };
+
+  const handleDeleteDemoNote = (id: string) => {
+    const confirmed = window.confirm("¿Estás seguro de que quieres eliminar este apunte demo?");
+    if (!confirmed) return;
+    setDemoNotes((prev) => prev.filter((n) => n.id !== id));
+    setDemoFeedback({ type: 'success', text: 'Apunte demo eliminado.' });
+  };
+
+  const handleResetDemoNotes = () => {
+    setDemoNotes([...DEMO_NOTES]);
+    setDemoFeedback({ type: 'success', text: 'Apuntes demo restablecidos a los valores iniciales.' });
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -105,16 +201,16 @@ export default function AddNotesPage() {
 
       if (result.success) {
         setFeedbackMessage({type: 'success', text: isEditing ? "Recurso actualizado." : "Recurso guardado."});
-        
+
         if (isEditing) {
           setIsEditing(false);
           setCurrentEditingResource(null);
         }
-        
+
         event.currentTarget.reset();
         setSelectedResourceType('');
         setFormKey(Date.now());
-        
+
         await fetchAndSetResources(resourceFilterType);
       } else {
         setFeedbackMessage({type: 'error', text: result.error || "Error procesando recurso."});
@@ -155,8 +251,8 @@ export default function AddNotesPage() {
     setFeedbackMessage(null);
   };
 
-  const filteredResources = resourceFilterType === 'all' 
-    ? resourcesList 
+  const filteredResources = resourceFilterType === 'all'
+    ? resourcesList
     : resourcesList.filter(r => r.type === resourceFilterType);
 
   // Loading state
@@ -171,10 +267,235 @@ export default function AddNotesPage() {
     );
   }
 
-  // Not authenticated - this shouldn't happen due to middleware, but just in case
+  // Not authenticated - en modo real se exige sesión; en demo se permite vista previa
+  if (!professor && !demoMode) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="text-center">
+          <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-2 text-foreground">Acceso Denegado</h1>
+          <p className="text-muted-foreground mb-4">Necesitas estar autenticado para acceder a esta página.</p>
+          <Button onClick={() => window.location.href = '/admin/login'}>
+            Ir al Login
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // ---- Vista del modo demo: funcional con DEMO_NOTES en memoria/localStorage ----
+  if (demoMode) {
+    const displayName = professor ? professor.name : 'visitante (vista demo)';
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
+
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                <User className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">Panel de Administración</h1>
+                <p className="text-sm text-muted-foreground">Bienvenido, {displayName}</p>
+                {professor?.department && (
+                  <p className="text-xs sm:text-sm text-muted-foreground">{professor.department}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+              {isAdmin && (
+                <Button
+                  variant="outline"
+                  onClick={() => router.push('/admin/dashboard')}
+                  className="flex items-center justify-center gap-2 text-xs sm:text-sm"
+                  size="sm"
+                >
+                  <Shield className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Panel Admin</span>
+                  <span className="sm:hidden">Admin</span>
+                </Button>
+              )}
+              {professor ? (
+                <Button
+                  variant="outline"
+                  onClick={handleLogout}
+                  className="flex items-center justify-center gap-2 text-xs sm:text-sm"
+                  size="sm"
+                >
+                  <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Cerrar Sesión</span>
+                  <span className="sm:hidden">Salir</span>
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={() => router.push('/admin/login')}
+                  className="flex items-center justify-center gap-2 text-xs sm:text-sm"
+                  size="sm"
+                >
+                  <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
+                  Ir al acceso
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Aviso de modo demo */}
+          <Alert className="mb-4 sm:mb-6 border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-100">
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Modo demo:</strong> los apuntes se guardan solo en tu navegador
+              (memoria/localStorage) y no se envían al servidor. Al recargar se conservan
+              en este equipo; con “Restablecer” vuelven a los valores iniciales.
+            </AlertDescription>
+          </Alert>
+
+          {/* Feedback demo */}
+          {demoFeedback && (
+            <div className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-lg border text-sm sm:text-base ${
+              demoFeedback.type === 'success'
+                ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200'
+                : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200'
+            }`}>
+              <div className="flex items-center gap-2">
+                {demoFeedback.type === 'success' ? (
+                  <div className="w-4 h-4 sm:w-5 sm:h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white text-xs">✓</span>
+                  </div>
+                ) : (
+                  <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                )}
+                <span className="break-words">{demoFeedback.text}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDemoFeedback(null)}
+                  className="ml-auto p-1 h-auto"
+                >
+                  <XCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+
+            {/* Demo form Card */}
+            <Card className="shadow-lg rounded-xl">
+              <CardHeader className="pb-4 sm:pb-6">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                  <FilePlus2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                  Agregar Apunte Demo
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Completa el formulario para guardar un apunte en tu navegador
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="p-4 sm:p-6">
+                <form onSubmit={handleAddDemoNote} className="space-y-4 sm:space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="demoTitulo" className="text-sm font-medium">Título *</Label>
+                    <Input
+                      id="demoTitulo"
+                      name="demoTitulo"
+                      placeholder="Ej.: Hipertensión arterial - resumen"
+                      value={demoTitulo}
+                      onChange={(e) => setDemoTitulo(e.target.value)}
+                      className="w-full"
+                      required
+                      maxLength={120}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="demoContenido" className="text-sm font-medium">Contenido *</Label>
+                    <Textarea
+                      id="demoContenido"
+                      name="demoContenido"
+                      placeholder="Escribe el contenido del apunte..."
+                      value={demoContenido}
+                      onChange={(e) => setDemoContenido(e.target.value)}
+                      className="w-full min-h-[120px] sm:min-h-[160px] resize-vertical"
+                      required
+                    />
+                  </div>
+
+                  <Button type="submit" className="w-full sm:w-auto">
+                    <UploadCloud className="h-4 w-4 mr-2" />
+                    Guardar apunte demo
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            {/* Demo notes list */}
+            <Card className="shadow-lg rounded-xl">
+              <CardHeader className="pb-4 sm:pb-6">
+                <CardTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <span className="flex items-center gap-2 text-lg sm:text-xl">
+                    <StickyNote className="h-4 w-4 sm:h-5 sm:w-5" />
+                    Apuntes Demo ({demoNotes.length})
+                  </span>
+                  <Button variant="outline" size="sm" onClick={handleResetDemoNotes} className="w-full sm:w-auto">
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Restablecer
+                  </Button>
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Datos iniciales de demostración más tus apuntes guardados en este navegador
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="p-4 sm:p-6">
+                {demoNotes.length === 0 ? (
+                  <div className="text-center py-8 sm:py-12">
+                    <BookOpen className="h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-sm sm:text-base text-muted-foreground">
+                      No hay apuntes demo. Agrega el primero con el formulario.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3 sm:gap-4 grid-cols-1">
+                    {demoNotes.map((note) => (
+                      <Card key={note.id} className="group hover:shadow-md transition-shadow">
+                        <CardContent className="p-3 sm:p-4">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <h3 className="font-semibold text-sm sm:text-base line-clamp-2">{note.titulo}</h3>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDeleteDemoNote(note.id)}
+                              className="h-7 w-7 p-0 text-destructive hover:text-destructive shrink-0"
+                              title="Eliminar apunte demo"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <p className="text-xs sm:text-sm text-muted-foreground whitespace-pre-line line-clamp-6">
+                            {note.contenido}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Rama real: aquí la sesión es obligatoria (el caso demo ya retornó arriba).
   if (!professor) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="text-center">
           <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-2 text-foreground">Acceso Denegado</h1>
@@ -190,7 +511,7 @@ export default function AddNotesPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
-        
+
         {/* Header with professor info and logout */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
           <div className="flex items-center gap-3">
@@ -205,11 +526,11 @@ export default function AddNotesPage() {
               )}
             </div>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
             {isAdmin && (
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => router.push('/admin/dashboard')}
                 className="flex items-center justify-center gap-2 text-xs sm:text-sm"
                 size="sm"
@@ -219,8 +540,8 @@ export default function AddNotesPage() {
                 <span className="sm:hidden">Admin</span>
               </Button>
             )}
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={handleLogout}
               className="flex items-center justify-center gap-2 text-xs sm:text-sm"
               size="sm"
@@ -235,8 +556,8 @@ export default function AddNotesPage() {
         {/* Feedback Message */}
         {feedbackMessage && (
           <div className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-lg border text-sm sm:text-base ${
-            feedbackMessage.type === 'success' 
-              ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200' 
+            feedbackMessage.type === 'success'
+              ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200'
               : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200'
           }`}>
             <div className="flex items-center gap-2">
@@ -262,7 +583,7 @@ export default function AddNotesPage() {
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-          
+
           {/* Resource Form Card */}
           <Card className="shadow-lg rounded-xl" ref={resourceFormCardRef}>
             <CardHeader className="pb-4 sm:pb-6">
@@ -274,15 +595,15 @@ export default function AddNotesPage() {
                 {isEditing ? 'Modifica los detalles del recurso' : 'Completa el formulario para agregar un nuevo recurso educativo'}
               </CardDescription>
             </CardHeader>
-            
+
             <CardContent className="p-4 sm:p-6">
               <form key={formKey} onSubmit={handleSubmit} className="space-y-4 sm:space-y-6" id="resource-form">
                 {/* Resource Type Selection */}
                 <div className="space-y-2">
                   <Label htmlFor="resourceType" className="text-sm font-medium">Tipo de Recurso *</Label>
-                  <Select 
-                    name="resourceType" 
-                    value={selectedResourceType} 
+                  <Select
+                    name="resourceType"
+                    value={selectedResourceType}
                     onValueChange={(value: string) => setSelectedResourceType(value as ResourceType | 'assessment' | '')}
                     required
                   >
@@ -416,10 +737,10 @@ export default function AddNotesPage() {
                 </div>
               </form>
             </CardContent>
-            
+
             <CardFooter className="p-4 sm:p-6 pt-0">
-              <div className="flex flex-col sm:flex-row gap-3 w-full">              <Button 
-                type="submit" 
+              <div className="flex flex-col sm:flex-row gap-3 w-full">              <Button
+                type="submit"
                 disabled={!selectedResourceType || isSubmitting}
                 className="flex-1 sm:flex-none sm:w-auto"
               >
@@ -445,11 +766,11 @@ export default function AddNotesPage() {
                     </>
                   )}
                 </Button>
-                
+
                 {isEditing && (
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     onClick={handleCancelEdit}
                     className="flex-1 sm:flex-none sm:w-auto"
                   >
@@ -469,8 +790,8 @@ export default function AddNotesPage() {
                 <span className="text-lg sm:text-xl">Recursos Existentes</span>
                 <div className="flex items-center gap-2">
                   <span className="text-xs sm:text-sm text-muted-foreground">Filtrar:</span>
-                  <Select 
-                    value={resourceFilterType} 
+                  <Select
+                    value={resourceFilterType}
                     onValueChange={(value: string) => setResourceFilterType(value as ResourceType | 'assessment' | 'all')}
                   >
                     <SelectTrigger className="w-[140px] sm:w-[180px]">
@@ -496,7 +817,7 @@ export default function AddNotesPage() {
                 </div>
               </CardTitle>
             </CardHeader>
-            
+
             <CardContent className="p-4 sm:p-6">
               {isLoadingResources ? (
                 <div className="text-center py-8 sm:py-12">
@@ -507,8 +828,8 @@ export default function AddNotesPage() {
                 <div className="text-center py-8 sm:py-12">
                   <BookOpen className="h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-sm sm:text-base text-muted-foreground">
-                    {resourceFilterType === 'all' 
-                      ? 'No hay recursos agregados aún.' 
+                    {resourceFilterType === 'all'
+                      ? 'No hay recursos agregados aún.'
                       : `No hay recursos del tipo ${resourceTypeOptions.find(o => o.value === resourceFilterType)?.label}.`
                     }
                   </p>
@@ -526,17 +847,17 @@ export default function AddNotesPage() {
                             </span>
                           </div>
                           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
+                            <Button
+                              size="sm"
+                              variant="ghost"
                               onClick={() => handleEditResource(resource)}
                               className="h-7 w-7 p-0"
                             >
                               <Pencil className="h-3 w-3" />
                             </Button>
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
+                            <Button
+                              size="sm"
+                              variant="ghost"
                               onClick={() => handleDeleteResource(resource.id)}
                               className="h-7 w-7 p-0 text-destructive hover:text-destructive"
                             >
@@ -544,18 +865,18 @@ export default function AddNotesPage() {
                             </Button>
                           </div>
                         </div>
-                        
+
                         <h3 className="font-semibold text-sm sm:text-base mb-2 line-clamp-2">{resource.title}</h3>
                         <p className="text-xs sm:text-sm text-muted-foreground mb-3 line-clamp-3">{resource.description}</p>
-                        
+
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <span>
                             {new Date(resource.createdAt).toLocaleDateString('es-ES')}
                           </span>
                           {resource.link && (
-                            <a 
-                              href={resource.link} 
-                              target="_blank" 
+                            <a
+                              href={resource.link}
+                              target="_blank"
                               rel="noopener noreferrer"
                               className="text-primary hover:text-primary/80 transition-colors text-xs truncate max-w-[100px]"
                             >
@@ -575,4 +896,3 @@ export default function AddNotesPage() {
     </div>
   );
 }
-

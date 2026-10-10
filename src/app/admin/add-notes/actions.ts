@@ -4,6 +4,10 @@ import type { File } from 'buffer';
 import { getPostgresClient } from '@/lib/postgres';
 import { supabase } from '@/lib/supabase';
 import { authenticateProfessor, type Professor } from '@/lib/auth';
+import { isDemoMode } from '@/lib/demo';
+
+const DEMO_UNAVAILABLE = 'No disponible en modo demo: los recursos se gestionan en memoria/localStorage desde la página.';
+const DEMO_FETCH_ERROR = 'No disponible en modo demo: usa los apuntes locales de demostración.';
 
 export type ResourceType = 'pdf' | 'video' | 'image' | 'article' | 'assessment' | '';
 
@@ -53,6 +57,9 @@ export async function handleLoginAction(formData: FormData): Promise<LoginResult
 }
 
 export async function saveResourceAction(formData: FormData) {
+  if (isDemoMode()) {
+    return { success: false, error: DEMO_UNAVAILABLE };
+  }
   const title = formData.get('resourceTitle') as string;
   const description = formData.get('resourceDescription') as string;
   const type = formData.get('resourceType') as ResourceType | 'assessment';
@@ -161,6 +168,9 @@ export async function saveResourceAction(formData: FormData) {
 }
 
 export async function updateResourceAction(resourceId: string, formData: FormData): Promise<{ success: boolean; error?: string; message?: string; updatedResource?: ClientResource }> {
+  if (isDemoMode()) {
+    return { success: false, error: DEMO_UNAVAILABLE };
+  }
   const title = formData.get('resourceTitle') as string;
   const description = formData.get('resourceDescription') as string;
   const type = formData.get('resourceType') as ResourceType | 'assessment';
@@ -280,6 +290,9 @@ export async function fetchResourcesAction(
   typeFilter?: ResourceType | 'assessment' | 'all',
   searchQuery?: string
 ): Promise<{ success: boolean; data?: ClientResource[]; error?: string; }> {
+  if (isDemoMode()) {
+    return { success: false, error: DEMO_FETCH_ERROR };
+  }
   console.log(`Obteniendo recursos de la base de datos con filtro: ${typeFilter || 'ninguno'} y búsqueda: "${searchQuery || ''}"`);
   
   await new Promise(resolve => setTimeout(resolve, 50)); 
@@ -334,6 +347,9 @@ export async function fetchResourcesAction(
 }
 
 export async function deleteResourceAction(resourceId: string): Promise<{ success: boolean; error?: string; message?: string }> {
+  if (isDemoMode()) {
+    return { success: false, error: DEMO_UNAVAILABLE };
+  }
   if (!resourceId) {
     return { success: false, error: "ID de recurso es requerido para eliminar." };
   }

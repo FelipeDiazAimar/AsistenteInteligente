@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
+import {
   Table,
   TableBody,
   TableCell,
@@ -14,16 +14,18 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  BookOpen, 
-  Trash2, 
+import {
+  BookOpen,
+  Trash2,
   Loader2,
   FileText,
   Video,
   Image,
   Newspaper,
-  ClipboardCheck
+  ClipboardCheck,
+  Info
 } from "lucide-react";
+import { DEMO_RESOURCES, isDemoMode } from '@/lib/demo';
 
 interface Resource {
   id: string;
@@ -49,6 +51,7 @@ const getTypeIcon = (type: string) => {
     case 'image':
       return <Image className="h-4 w-4" />;
     case 'article':
+    case 'articulo':
       return <Newspaper className="h-4 w-4" />;
     case 'assessment':
       return <ClipboardCheck className="h-4 w-4" />;
@@ -64,8 +67,10 @@ const getTypeBadgeColor = (type: string) => {
     case 'video':
       return 'bg-purple-100 dark:bg-purple-950/30 text-purple-800 dark:text-purple-200';
     case 'image':
+    case 'imagen':
       return 'bg-green-100 dark:bg-green-950/30 text-green-800 dark:text-green-200';
     case 'article':
+    case 'articulo':
       return 'bg-blue-100 dark:bg-blue-950/30 text-blue-800 dark:text-blue-200';
     case 'assessment':
       return 'bg-yellow-100 dark:bg-yellow-950/30 text-yellow-800 dark:text-yellow-200';
@@ -74,43 +79,82 @@ const getTypeBadgeColor = (type: string) => {
   }
 };
 
+// Vista previa de solo lectura construida con el contrato demo (no toca demo.ts).
+function demoPreviewResources(): Resource[] {
+  const now = new Date().toISOString();
+  return DEMO_RESOURCES.map((r) => ({
+    id: r.id,
+    title: r.titulo,
+    description: r.descripcion,
+    type: r.tipo,
+    link: r.url,
+    created_at: now,
+  }));
+}
+
 export default function ResourcesManagement() {
+  const demo = isDemoMode();
   const [resources, setResources] = useState<Resource[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!demo);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
+    // En modo demo se muestra la vista previa local sin llamar a la API.
+    if (demo) {
+      setResources(demoPreviewResources());
+      setLoading(false);
+      return;
+    }
     fetchResources();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demo]);
 
   const fetchResources = async () => {
+    setLoading(true);
+    setError('');
     try {
       const response = await fetch('/api/admin/resources', {
         credentials: 'include', // Asegurar que las cookies se envíen
       });
-      
+
+      if (!response.ok) {
+        throw new Error(`La API respondió con estado ${response.status}`);
+      }
+
       const data = await response.json();
-      
-      if (data.success) {
+
+      if (data.success && Array.isArray(data.resources)) {
         setResources(data.resources);
       } else {
-        setError(`Error al cargar recursos: ${data.error || 'Unknown error'}`);
+        setResources([]);
+        setError(`No se pudieron cargar los recursos: ${data.error || 'respuesta no válida'}`);
       }
     } catch (error) {
-      setError(`Error de conexión: ${error}`);
+      console.error('Error al cargar recursos:', error);
+      setResources([]);
+      setError('No se pudo conectar con el servidor. Intenta de nuevo más tarde.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (resourceId: string) => {
+    if (demo) {
+      setError('La eliminación no está disponible en la vista previa demo (solo lectura).');
+      return;
+    }
     if (!confirm('¿Estás seguro de que quieres eliminar este recurso?')) return;
 
     try {
       const response = await fetch(`/api/admin/resources?id=${resourceId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include',
       });
+
+      if (!response.ok) {
+        throw new Error(`La API respondió con estado ${response.status}`);
+      }
 
       const data = await response.json();
 
@@ -121,7 +165,8 @@ export default function ResourcesManagement() {
         setError(data.error || 'Error al eliminar recurso');
       }
     } catch (error) {
-      setError('Error de conexión');
+      console.error('Error al eliminar recurso:', error);
+      setError('Error de conexión. Intenta de nuevo más tarde.');
     }
   };
 
@@ -140,14 +185,33 @@ export default function ResourcesManagement() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
               <BookOpen className="h-5 w-5" />
-              <CardTitle>Gestión de Recursos</CardTitle>
+              <div>
+                <CardTitle>Gestión de Recursos</CardTitle>
+                <CardDescription>
+                  {demo ? 'Vista previa demo de solo lectura' : 'Recursos educativos del sistema'}
+                </CardDescription>
+              </div>
             </div>
+            {!demo && (
+              <Button variant="outline" size="sm" onClick={fetchResources} className="w-full sm:w-auto">
+                Actualizar
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent>
+          {demo && (
+            <Alert className="mb-4 border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-100">
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                Modo demo: vista previa de solo lectura con datos locales. La eliminación y
+                la carga desde la API no están disponibles aquí.
+              </AlertDescription>
+            </Alert>
+          )}
           {success && (
             <Alert className="mb-4">
               <AlertDescription>{success}</AlertDescription>
@@ -158,14 +222,21 @@ export default function ResourcesManagement() {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          
+
           {resources.length === 0 ? (
-            <div className="text-center py-8">
+            <div className="text-center py-8 sm:py-12">
               <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No hay recursos</h3>
-              <p className="text-muted-foreground">
-                Los profesores aún no han subido recursos al sistema.
+              <p className="text-muted-foreground text-sm sm:text-base">
+                {demo
+                  ? 'No hay recursos demo para mostrar.'
+                  : 'Los profesores aún no han subido recursos al sistema.'}
               </p>
+              {!demo && (
+                <Button variant="outline" size="sm" className="mt-4" onClick={fetchResources}>
+                  Reintentar
+                </Button>
+              )}
             </div>
           ) : (
             <>
@@ -223,6 +294,8 @@ export default function ResourcesManagement() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleDelete(resource.id)}
+                                disabled={demo}
+                                title={demo ? 'No disponible en modo demo' : 'Eliminar recurso'}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -252,31 +325,33 @@ export default function ResourcesManagement() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleDelete(resource.id)}
+                          disabled={demo}
+                          title={demo ? 'No disponible en modo demo' : 'Eliminar recurso'}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                      
+
                       {/* Title */}
                       <div>
                         <h3 className="font-medium text-base line-clamp-2">{resource.title}</h3>
                       </div>
-                      
+
                       {/* Description */}
                       <div>
                         <p className="text-sm text-muted-foreground line-clamp-3">{resource.description}</p>
                       </div>
-                      
+
                       {/* File info */}
                       <div className="space-y-1">
                         <div className="text-sm font-medium line-clamp-1" title={resource.file_name || resource.title}>
-                          📁 {resource.file_name || resource.title}
+                          {resource.file_name || resource.title}
                         </div>
                         <div className="text-xs text-muted-foreground line-clamp-2" title={resource.ai_hint || 'Sin pista de IA'}>
-                          🤖 {resource.ai_hint || 'Sin pista de IA'}
+                          {resource.ai_hint || 'Sin pista de IA'}
                         </div>
                       </div>
-                      
+
                       {/* Date */}
                       <div className="text-xs text-muted-foreground">
                         Creado: {new Date(resource.created_at).toLocaleDateString()}

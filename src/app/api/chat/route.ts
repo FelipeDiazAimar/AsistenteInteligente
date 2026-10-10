@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { extractTextFromPdfDataUri } from '@/lib/pdf-service';
+import { isDemoMode, demoChatReply } from '@/lib/demo';
 
 interface ChatApiRequest {
   question: string;
@@ -25,6 +26,25 @@ export async function POST(request: NextRequest) {
         { error: 'Question is required and must be a string' },
         { status: 400 }
       );
+    }
+
+    // MODO DEMO: sin OpenRouter, responde con apuntes precargados.
+    // Mismo shape que la respuesta real ({ answer }), más flag demo:true.
+    if (isDemoMode() || !process.env.OPENROUTER_API_KEY) {
+      try {
+        const answer = demoChatReply(body.question);
+        return NextResponse.json({ answer, demo: true });
+      } catch (demoError) {
+        console.error('Demo chat reply error:', demoError);
+        return NextResponse.json(
+          {
+            error: 'Demo reply error',
+            answer: 'Lo siento, no se pudo generar la respuesta demo en este momento. Inténtalo de nuevo.',
+            demo: true,
+          },
+          { status: 500 }
+        );
+      }
     }
 
     // Procesar PDF si está presente

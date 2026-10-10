@@ -1,8 +1,27 @@
 #!/usr/bin/env tsx
 
+import { config } from 'dotenv';
+config();
+config({ path: '.env.local', override: true });
+
 import { getPostgresClient } from '../src/lib/postgres';
 
+// Modo demo: este script requiere Postgres. Si la app está en modo demo
+// (NEXT_PUBLIC_DEMO_MODE distinto de 'false', por defecto true) o falta
+// DATABASE_URL, se omite sin error para no romper la demo.
+function isDemoSkip(): boolean {
+  return process.env.NEXT_PUBLIC_DEMO_MODE !== 'false' || !process.env.DATABASE_URL;
+}
+
 async function cleanExpiredSessions() {
+  if (isDemoSkip()) {
+    console.log(
+      'modo demo: omitido (clean-sessions sin DATABASE_URL). ' +
+        'La app usa datos locales en modo demo. Para modo real: NEXT_PUBLIC_DEMO_MODE=false + DATABASE_URL en .env.local.'
+    );
+    process.exit(0);
+  }
+
   console.log('Iniciando limpieza de sesiones expiradas...');
   
   const client = await getPostgresClient();
