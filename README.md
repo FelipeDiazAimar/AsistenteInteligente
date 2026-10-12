@@ -1,6 +1,8 @@
 # 🩺 Compañero de Atención Primaria
 
-**Asistente de aprendizaje impulsado por IA para atención primaria de la salud**
+**Asistente de aprendizaje impulsado por IA para atención primaria de la salud. ([🇬🇧 English version](README.en.md))**
+
+**[🚀 Demo en vivo](https://asistente-inteligente.vercel.app) · [📦 Repo](https://github.com/FelipeDiazAimar/AsistenteInteligente)**
 
 [![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-000000?style=for-the-badge&logo=vercel)](https://asistente-inteligente.vercel.app)
 [![Next.js](https://img.shields.io/badge/Next.js-15.2.3-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
@@ -238,3 +240,15 @@ npm run clean-sessions  # Limpia sesiones expiradas
 3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
 4. Push a la rama (`git push origin feature/AmazingFeature`)
 5. Abre un Pull Request
+
+## 👤 Autor, contacto y licencia
+
+**Felipe Diaz Aimar** — Desarrollo full-stack (Next.js, Genkit/Gemini, Postgres, Supabase).
+- 💼 LinkedIn: https://www.linkedin.com/in/felipe-aimar/
+- 📧 Email: felipediazaimar@gmail.com
+- 🐙 GitHub: https://github.com/FelipeDiazAimar
+- 🌐 Demo: https://asistente-inteligente.vercel.app
+
+Proyecto privado adaptado a demo de portfolio. Todos los derechos reservados.
+
+> **English TL;DR:** AI-powered learning assistant for primary healthcare: smart chat (Genkit + Gemini/OpenRouter), PDF analysis as context (`pdf-parse`), resource library, JWT auth with roles, admin dashboard, dark/light + full mobile responsive. Demo mode runs with zero DB/keys (3 preloaded notes, demo resources/quiz, `admin@demo.local` / `demo1234` at `/admin/login`); real mode with `DATABASE_URL` + Supabase + `JWT_SECRET` + AI keys + `npm run setup-db` / `add-admin`. Custom Express server (`server.js`, compression). Run: `npm install && npm run dev` (`:9002`). Full English docs in [README.en.md](README.en.md).
